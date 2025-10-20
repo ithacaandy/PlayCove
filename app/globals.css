@@ -1,0 +1,86 @@
+/* ✅ Keep these at the very top so Tailwind works */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* PlayCove design tokens */
+:root{
+  --sunshine:#FFCD02;
+  --sunshine-600:#E5B902;
+  --sunshine-700:#CFA402;
+
+  --ink:#1A1A1A;
+  --stone:#666666;
+  --border:#E6E2D9;
+  --cream:#FFF8E1;
+  --paper:#FFFFFF;
+  --accent:#5C7C5A;
+  --accent-600:#4E6B4D;
+  --accent-700:#425C41;
+
+  --radius:16px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.06);
+}
+
+/* Global background/text */
+html, body { background: var(--cream); color: var(--ink); }
+
+/* Make the container feel app-like on mobile */
+.container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+
+/* Put our component classes inside @layer so Tailwind won't purge them */
+@layer components {
+  .card{
+    @apply bg-white;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .btn{
+    @apply inline-flex items-center justify-center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+  }
+
+  .btn-ghost{ background:#fff; }
+  .btn-primary{
+    background: var(--sunshine);
+    border-color: var(--sunshine);
+  }
+  .btn-primary:hover{ background: var(--sunshine-600); }
+  .btn-accent{
+    background: var(--accent);
+    color:#fff;
+    border-color: var(--accent);
+  }
+  .btn-accent:hover{ background: var(--accent-600); }
+
+  .badge{
+    @apply inline-flex items-center;
+    gap:6px; padding:6px 10px; border-radius:999px;
+    border:1px solid var(--border); background:#fff; color:var(--ink);
+  }
+
+  .title{ font-weight:600; color:var(--ink); }
+  .meta{ font-size:12px; color:var(--stone); }
+
+  .app-header{
+    position: sticky; top:0; z-index:30;
+    background:#fff; border-bottom:1px solid var(--border);
+  }
+}
+
+/* Small screens tweaks */
+@media (max-width: 375px){
+  .card{ border-radius: 14px; }
+  .btn{ padding: 8px 10px; }
+}
+@media (max-width: 360px){
+  .container { padding: 0 12px; }
+  .btn { padding: 8px 9px; }
+}

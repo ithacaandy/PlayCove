@@ -1,0 +1,56 @@
+
+import Header from "../components/Header";
+import { createServerSupabase } from "../../lib/supabase-server";
+import { redirect } from "next/navigation";
+
+export default async function Mine(){
+  const s = createServerSupabase();
+  const { data: { user } } = await s.auth.getUser();
+  if (!user) redirect("/auth?next=/mine");
+
+  const { data: rows } = await s
+    .from("events")
+    .select("*, groups:groups(name)")
+    .eq("owner_id", user.id)
+    .order("date_iso", { ascending: true });
+
+  return (
+    <main>
+      {/* @ts-expect-error Async Server Component */}
+      <Header />
+      <div className="container py-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">My Posts</h1>
+          <a href="/new" className="btn">+ New Post</a>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {(rows || []).map(e => (
+            <div key={e.id} className="card p-0 overflow-hidden">
+              {e.image_url && <img src={e.image_url} alt={e.title} className="w-full h-48 object-cover" />}
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <b>{e.title}</b>
+                  <div className="text-xs text-gray-500">Group: {e.groups?.name || "—"}</div>
+                </div>
+                <span className="text-sm text-gray-500">{e.date_iso} {e.start_time}</span>
+              </div>
+              <div className="px-4 pb-4">
+                <div className="text-sm text-gray-600">{e.location_name} · {e.city}</div>
+                <div className="mt-3 flex gap-2 text-sm">
+                  <a className="btn" href={`/edit/${e.id}`}>Edit</a>
+                  <form action={`/api/hide?event=${e.id}`} method="post"><button className="btn">{e.is_hidden ? "Unhide" : "Hide"}</button></form>
+                </div>
+              </div>
+            </div>
+          ))}
+          {(rows || []).length === 0 && (
+            <div className="card p-6 text-center text-gray-600">
+              You don’t have any posts yet. <a href="/new" className="underline">Create your first post</a>.
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}

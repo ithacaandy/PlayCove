@@ -1,0 +1,111 @@
+{
+  "project": {
+    "name": "PlayCove",
+    "version": "4.9",
+    "description": "Mobile-first community app for parents to create groups and share kid playdates. Built with Next.js (App Router) + Supabase (Auth, DB, Storage, RLS).",
+    "owners": [
+      {
+        "name": "Andy",
+        "uuid_main_user": "d032a1a2-e77c-4f4a-8e8d-bde586bee5a0"
+      }
+    ],
+    "stack": {
+      "frontend": "Next.js 14 (App Router), React, Tailwind",
+      "backend": "Supabase (Postgres, Auth, RLS, Storage)",
+      "deployment": "Local dev; Vercel-ready",
+      "design": "Warm yellow + earth tones, mobile-first, card grid"
+    },
+    "env": {
+      "required": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      ],
+      "notes": "Create .env.local with your Supabase URL and anon key."
+    },
+    "supabase": {
+      "buckets": [
+        { "name": "avatars", "public": true }
+      ],
+      "tables": [
+        "users (auth.users source of truth for profile metadata)",
+        "groups (owner_id uuid, is_discoverable boolean)",
+        "group_members (group_id, user_id, role: owner|admin|member, status: active|pending|rejected)",
+        "events (group_id, owner_id, title, description, date_iso, start_time, end_time, location_name, city, map_url, age_min, age_max, capacity, tags text[], visibility: public|group, contact, is_hidden)",
+        "rsvps (event_id, user_id)",
+        "admins (user_id)"
+      ],
+      "helpers": [
+        "public.is_admin(uid uuid) RETURNS boolean SECURITY DEFINER"
+      ],
+      "rls_summary": [
+        "admins: single flat SELECT policy to authenticated; no writes via client",
+        "events: owners or public.is_admin(auth.uid()) can update/delete; group/member read via policies",
+        "group_members: policies to allow owners/admins approval; members read"
+      ]
+    },
+    "design": {
+      "palette": {
+        "sunshine": "#FFCD02",
+        "ink": "#1F2937",
+        "clay": "#C2A585",
+        "pebble": "#F6F3EE",
+        "leaf": "#4CAF50",
+        "accent": "#F97316"
+      },
+      "notes": "Login look/feel carried across app. Bottom nav active state, no gradients, earth tones. Mobile-first."
+    },
+    "routes": [
+      { "path": "/", "role": "Home - Upcoming playtimes scoped to my groups" },
+      { "path": "/auth", "role": "Sign in / Sign up" },
+      { "path": "/groups", "role": "My Groups list (owner/member actions)" },
+      { "path": "/groups/discover", "role": "Discover groups (hide groups I own)" },
+      { "path": "/groups/new", "role": "Create group" },
+      { "path": "/mine", "role": "My Posts (events I own)" },
+      { "path": "/new", "role": "New Event (post)" },
+      { "path": "/edit/[id]", "role": "Edit Event" },
+      { "path": "/account", "role": "Profile (avatar, name, location, bio, logout)" }
+    ],
+    "ui": {
+      "components": [
+        "Header (fixed top, hidden on /auth)",
+        "BottomNav (Home, Groups, Discover, My Posts, Profile) with active highlight",
+        "EventCard (owner sees Edit, hides Report; members see RSVP/Report; non-members limited contact)",
+        "FabNewPost (mobile-only)"
+      ]
+    },
+    "seed_data": {
+      "bundle_zip": "playcove_v4_9_seed.zip",
+      "files": [
+        "supabase/seed/playcove_seed_v4_9.sql",
+        "supabase/seed/playcove_cleanup_v4_9.sql"
+      ],
+      "latest_test_user_uuid": "53061c92-3410-4a4f-be3d-29370281630f"
+    },
+    "scripts": {
+      "dev": "npm run dev",
+      "build": "npm run build",
+      "fix:headers": "scripts/run-remove-inline-header.bat"
+    },
+    "status": {
+      "done": [
+        "Auth + sessions",
+        "Profile with avatar (public bucket), display name, location, bio, logout",
+        "Group create/manage; Discover hides my owned groups",
+        "Events create/edit; owner vs member actions",
+        "RLS recursion fixed via is_admin()",
+        "Bottom nav avatar live-updates"
+      ],
+      "next": [
+        "v5.0: design polish pass across routes; consistent header; spacing & card density for ≤375px",
+        "v5.1: in-app notifications (RSVPs, approvals)",
+        "v5.2: group/location search + map view",
+        "PWA install + splash (toward app-store shells)"
+      ]
+    },
+    "notes": [
+      "If you see duplicate headers on any route, ensure local files do NOT import Header directly; root layout renders it.",
+      "On owner cards: show Edit, hide Report. Non-owner: RSVP + Report.",
+      "Discover page: filter out groups where owner_id == auth.uid()."
+    ]
+  }
+}

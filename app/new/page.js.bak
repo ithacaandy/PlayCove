@@ -1,0 +1,54 @@
+import Header from "../components/Header";
+import { createServerSupabase } from "../../lib/supabase-server";
+import { redirect } from "next/navigation";
+
+export default async function New() {
+  const supabase = createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth");
+
+  const { data: myGroups } = await supabase
+    .from("group_members")
+    .select("group_id, groups!inner(id,name)")
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  return (
+    <main>
+      {/* @ts-expect-error Async Server Component */}
+      <Header />
+      <div className="container py-4 space-y-4">
+        <h2 className="text-lg font-semibold">Post a Playdate</h2>
+        <form className="grid gap-3" action="/api/create" method="post" encType="multipart/form-data">
+          <select name="group_id" className="input" required defaultValue="">
+            <option value="" disabled>Choose a group</option>
+            {(myGroups || []).map(m => (
+              <option key={m.groups.id} value={m.groups.id}>{m.groups.name}</option>
+            ))}
+          </select>
+          <input name="title" placeholder="Title" className="input" required />
+          <textarea name="description" placeholder="Description" className="input" />
+          <div className="grid md:grid-cols-3 gap-2">
+            <input name="date_iso" type="date" className="input" required />
+            <input name="start_time" type="time" className="input" required />
+            <input name="end_time" type="time" className="input" />
+          </div>
+          <input name="location_name" placeholder="Location" className="input" required />
+          <input name="city" placeholder="City" className="input" required />
+          <input name="map_url" placeholder="Map URL" className="input" />
+          <div className="grid md:grid-cols-3 gap-2">
+            <input name="age_min" type="number" min="0" max="16" defaultValue="3" className="input" />
+            <input name="age_max" type="number" min="0" max="16" defaultValue="8" className="input" />
+            <input name="capacity" type="number" min="1" max="40" defaultValue="6" className="input" />
+          </div>
+          <input name="contact" placeholder="Contact (shared after RSVP)" className="input" />
+          <div>
+            <label className="label">Cover image (optional)</label>
+            <input name="image" type="file" accept="image/*" className="input" />
+          </div>
+          <button className="btn btn-primary">Post</button>
+        </form>
+      </div>
+    </main>
+  );
+}

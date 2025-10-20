@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/account/page": "app/account/page.js",
+  "/groups/discover/page": "app/groups/discover/page.js",
+  "/groups/page": "app/groups/page.js",
+  "/mine/page": "app/mine/page.js",
+  "/new/page": "app/new/page.js"
+}

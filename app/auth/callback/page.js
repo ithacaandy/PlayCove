@@ -1,0 +1,1 @@
+export default function Callback(){return(<main className="container py-6"><h2 className="text-lg font-semibold">Email verified</h2><p className="text-gray-600 mt-2">You can close this tab and return to the app.</p></main>);}
