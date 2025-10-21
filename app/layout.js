@@ -1,48 +1,34 @@
-// app/layout.js
 import './globals.css';
-
-// Try to import Header if present
-let Header;
-try {
-  Header = require('./components/Header').default;
-} catch {
-  console.warn('⚠️ Header component not found — continuing without it.');
-}
-
-// Import BottomNav (added in this patch)
-let BottomNav;
-try {
-  BottomNav = require('./components/BottomNav').default;
-} catch {
-  console.warn('⚠️ BottomNav component not found — continuing without it.');
-}
+import Header from './components/Header';
+import BottomNav from './components/BottomNav';
 
 export const metadata = {
   title: 'PlayCove',
-  description: 'Mobile-first community app for parents to create groups and share playdates.',
+  description: 'Connect with nearby families through groups and playdate events.',
 };
 
-// Next.js 14+: viewport must be separate
 export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#FFCD02',
+  viewportFit: 'cover', // iOS safe area
 };
 
 export default function RootLayout({ children }) {
-  // Header height ~56px; BottomNav height ~64px. Add padding so content isn't obscured.
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900">
-        {Header ? <Header /> : null}
+      <body className="min-h-screen bg-white text-gray-900 antialiased">
+        {/* Hide header on mobile, show on md+ */}
+        <div className="hidden md:block">
+          <Header />
+        </div>
 
-        <main className="pb-20 pt-14 mx-auto max-w-screen-md px-3">
+        {/* Main content area */}
+        <main className="mx-auto max-w-screen-md px-3 pb-20 md:pb-6">
           {children}
         </main>
 
-        {BottomNav ? <BottomNav /> : null}
+        {/* Persistent bottom nav (mobile only) */}
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
       </body>
     </html>
   );

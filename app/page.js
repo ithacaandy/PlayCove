@@ -1,144 +1,210 @@
-import { createServerSupabase } from "../lib/supabase-server";
-import { redirect } from "next/navigation";
-import FabNewPost from "./components/FabNewPost";
+'use client';
 
-export default async function Page({ searchParams }) {
-  const supabase = createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth?next=/");
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { getSupabaseClient } from '../lib/supabaseClient';
 
-  // get my groups (still used to scope events)
-  const { data: memberships } = await supabase
-    .from("group_members")
-    .select("group_id, groups!inner(id,name)")
-    .eq("user_id", user.id)
-    .eq("status", "active");
+const supabase = getSupabaseClient();
 
-  const myGroups = (memberships || []).map(m => ({ id: m.groups.id, name: m.groups.name }));
-  const groupParam = searchParams?.group || "";
+export default function HomePage() {
+  const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState(null); // { id, email }
+  const [myEvents, setMyEvents] = useState([]);
+  const [rsvps, setRsvps] = useState([]); // events I RSVP'd to (not owned)
+  const [invites, setInvites] = useState([]); // group invites for my email
+  const [err, setErr] = useState(null);
 
-  // events query (include groups.owner_id so we can detect ownership)
-  let q = supabase
-    .from("events")
-    .select("*, groups:groups(name, owner_id)")
-    .order("date_iso", { ascending: true })
-    .gte("date_iso", new Date().toISOString().slice(0,10));
+  useEffect(() => {
+    if (!supabase) { setErr('Supabase not configured'); setLoading(false); return; }
+    (async () => {
+      setLoading(true);
+      const { data: sres } = await supabase.auth.getSession();
+      const user = sres?.session?.user || null;
+      const id = user?.id || null;
+      const email = user?.email || null;
+      setMe(id ? { id, email } : null);
 
-  if (myGroups.length) {
-    const ids = myGroups.map(g => g.id);
-    if (groupParam && ids.includes(groupParam)) q = q.eq("group_id", groupParam);
-    else q = q.in("group_id", ids);
-  } else {
-    // show none if user isn’t in any groups
-    q = q.eq("group_id", "00000000-0000-0000-0000-000000000000");
-  }
+      try {
+        const [mine, rsvpList, inviteList] = await Promise.all([
+          id
+            ? supabase
+                .from('events')
+                .select('id, title, description, date_iso, start_time, end_time, city, location_name, created_at')
+                .eq('owner_id', id)
+                .order('date_iso', { ascending: true })
+            : { data: [], error: null },
+          id
+            ? supabase
+                .from('rsvps')
+                .select('event_id')
+                .eq('user_id', id)
+            : { data: [], error: null },
+          email
+            ? supabase
+                .from('group_invites')
+                .select('id, group_id, status, expires_at, created_at')
+                .eq('email', email)
+                .neq('status', 'accepted')
+                .order('created_at', { ascending: false })
+            : { data: [], error: null },
+        ]);
 
-  const { data: events } = await q;
-  const list = (events || []).filter(e => !e.is_hidden);
+        const myEv = mine.data || [];
+        setMyEvents(myEv);
 
-  // which events I RSVP’d
-  let mySet = new Set();
-  if (user && list.length) {
-    const ids = list.map(e => e.id);
-    const { data: mine } = await supabase
-      .from("rsvps").select("event_id")
-      .in("event_id", ids)
-      .eq("user_id", user.id);
-    (mine || []).forEach(r => mySet.add(r.event_id));
-  }
+        // fetch events for rsvps (exclude ones I own to avoid duplicates)
+        const rsvpEventIds = (rsvpList.data || []).map(r => r.event_id).filter(Boolean);
+        let rsvpEvents = [];
+        if (rsvpEventIds.length) {
+          const { data: evs } = await supabase
+            .from('events')
+            .select('id, title, description, date_iso, start_time, end_time, city, location_name, created_at, owner_id')
+            .in('id', rsvpEventIds);
+          rsvpEvents = (evs || []).filter(e => e.owner_id !== id);
+        }
+        setRsvps(rsvpEvents);
 
-  // quick RSVP counts
-  let countMap = new Map();
-  if (list.length) {
-    const ids = list.map(e => e.id);
-    const { data: all } = await supabase
-      .from("rsvps").select("event_id")
-      .in("event_id", ids);
-    (all || []).forEach(r => countMap.set(r.event_id, (countMap.get(r.event_id) || 0) + 1));
-  }
+        // hydrate group names for invites
+        const invitesRaw = inviteList.data || [];
+        let groupsById = {};
+        if (invitesRaw.length) {
+          const { data: groups } = await supabase
+            .from('groups')
+            .select('id, name, description')
+            .in('id', invitesRaw.map(i => i.group_id));
+          (groups || []).forEach(g => { groupsById[g.id] = g; });
+        }
+        setInvites(invitesRaw.map(i => ({ ...i, group: groupsById[i.group_id] || null })));
+        setErr(null);
+      } catch (e) {
+        setErr(e.message || String(e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const hasAnything = useMemo(() => {
+    return (myEvents?.length || 0) + (rsvps?.length || 0) + (invites?.length || 0) > 0;
+  }, [myEvents, rsvps, invites]);
 
   return (
-    <main>
-      <div className="container py-4 space-y-4">
-        {/* Page title */}
-        <h1 className="text-xl font-semibold">Upcoming Playtime!</h1>
+    <div className="py-6">
+      <h1 className="text-xl font-semibold">PlayCove</h1>
+      <p className="mt-2 text-gray-600">Your events, RSVPs, and invites — all in one place.</p>
 
-        {/* Events */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {list.map(e => {
-            const rsvps = countMap.get(e.id) || 0;
-            const canSeeContact = user && mySet.has(e.id);
-            const isOwner = e.owner_id === user.id || e.groups?.owner_id === user.id;
+      {err ? (
+        <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{err}</div>
+      ) : null}
 
-            return (
-              <div key={e.id} className="card overflow-hidden">
-                {e.image_url && (
-                  <img
-                    src={e.image_url}
-                    alt={e.title}
-                    className="w-full h-48 object-cover"
-                    loading="lazy"
-                  />
-                )}
-                <div className="p-5 flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs text-neutral-500">
-                      {e.date_iso} {e.start_time}
-                    </div>
-                    <div className="font-medium mt-0.5">{e.title}</div>
-                    <div className="text-xs text-neutral-500">
-                      Group: {e.groups?.name || "—"}
-                    </div>
-                  </div>
-                  {e.map_url && (
-                    <a className="btn btn-ghost" href={e.map_url} target="_blank" rel="noreferrer">
-                      Map
-                    </a>
-                  )}
-                </div>
-                <div className="px-5 pb-5">
-                  <div className="text-sm text-neutral-700">
-                    {e.location_name} · {e.city}
-                  </div>
-                  <div className="text-xs text-neutral-500 mt-1">
-                    {rsvps} / {e.capacity} going
-                  </div>
-                  {e.description && <p className="mt-2 text-sm">{e.description}</p>}
-                  {e.contact && (
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Contact: {canSeeContact ? e.contact : (user ? "RSVP to view" : "Sign in & RSVP to view")}
-                    </p>
-                  )}
-                  <div className="mt-3 flex gap-2 text-sm">
-                    {isOwner ? (
-                      <a className="btn btn-ghost" href={`/edit/${e.id}`}>Edit</a>
-                    ) : (
-                      <form action={`/api/rsvp?event=${e.id}`} method="post">
-                        <button className="btn btn-ghost">RSVP</button>
-                      </form>
-                    )}
-                    {!isOwner && (
-                      <form action={`/api/report?event=${e.id}`} method="post">
-                        <button className="btn btn-ghost">Report</button>
-                      </form>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {list.length === 0 && (
-            <div className="card p-6 text-center text-neutral-600">
-              No upcoming playdates yet. <a className="underline" href="/new">Post one</a>!
-            </div>
-          )}
+      {loading ? (
+        <div className="mt-5 animate-pulse space-y-3">
+          <div className="h-16 rounded bg-gray-200" />
+          <div className="h-16 rounded bg-gray-200" />
+          <div className="h-16 rounded bg-gray-200" />
         </div>
-      </div>
+      ) : !me ? (
+        <div className="mt-5 rounded-md border px-3 py-3 text-gray-700">
+          Please <Link href="/auth" className="underline">sign in</Link> to see your feed.
+        </div>
+      ) : !hasAnything ? (
+        <div className="mt-5 text-gray-700">
+          Nothing yet. Create an event from <Link href="/new" className="underline">New</Link> or join a group in{' '}
+          <Link href="/discover" className="underline">Discover</Link>.
+        </div>
+      ) : (
+        <>
+          {/* Group Invites */}
+          {invites.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-base font-semibold">Invitations</h2>
+              <ul className="mt-3 grid gap-3">
+                {invites.map(inv => (
+                  <li key={inv.id} className="rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium">
+                          {inv.group?.name || 'Group Invitation'}
+                        </div>
+                        <div className="mt-1 text-sm text-gray-700">
+                          Status: {inv.status} · Expires {new Date(inv.expires_at).toLocaleDateString()}
+                        </div>
+                        {inv.group?.description ? (
+                          <div className="mt-1 text-sm text-gray-600 line-clamp-2">{inv.group.description}</div>
+                        ) : null}
+                      </div>
+                      <Link
+                        href={`/groups/${inv.group_id}`}
+                        className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                      >
+                        View group
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {/* FAB for mobile */}
-      {/* @ts-expect-error Async Server Component */}
-      <FabNewPost />
-    </main>
+          {/* My Events */}
+          <section className="mt-8">
+            <h2 className="text-base font-semibold">My Events</h2>
+            {myEvents.length === 0 ? (
+              <p className="mt-2 text-gray-600">You haven’t created any events yet.</p>
+            ) : (
+              <ul className="mt-3 grid gap-3">
+                {myEvents.map(ev => (
+                  <li key={ev.id} className="rounded-lg border hover:shadow-sm transition">
+                    <Link href={`/events/${ev.id}`} className="block p-3">
+                      <div className="font-medium">{ev.title}</div>
+                      <div className="mt-1 text-sm text-gray-700">
+                        {formatDate(ev.date_iso)} · {formatTime12(ev.start_time)}
+                        {ev.end_time ? `–${formatTime12(ev.end_time)}` : ''}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {ev.location_name}{ev.city ? `, ${ev.city}` : ''}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* RSVPs */}
+          <section className="mt-8">
+            <h2 className="text-base font-semibold">I RSVP’d</h2>
+            {rsvps.length === 0 ? (
+              <p className="mt-2 text-gray-600">No RSVPs yet.</p>
+            ) : (
+              <ul className="mt-3 grid gap-3">
+                {rsvps.map(ev => (
+                  <li key={ev.id} className="rounded-lg border hover:shadow-sm transition">
+                    <Link href={`/events/${ev.id}`} className="block p-3">
+                      <div className="font-medium">{ev.title}</div>
+                      <div className="mt-1 text-sm text-gray-700">
+                        {formatDate(ev.date_iso)} · {formatTime12(ev.start_time)}
+                        {ev.end_time ? `–${formatTime12(ev.end_time)}` : ''}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {ev.location_name}{ev.city ? `, ${ev.city}` : ''}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
+    </div>
   );
+}
+
+function formatDate(d) { try { return new Date(d).toLocaleDateString(); } catch { return d; } }
+function formatTime12(t) {
+  if (!t) return '';
+  const [hStr, mStr] = t.split(':'); let h = parseInt(hStr, 10); const m = parseInt(mStr || '0', 10);
+  const suffix = h >= 12 ? 'p.m.' : 'a.m.'; h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2, '0')} ${suffix}`;
 }
