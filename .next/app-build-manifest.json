@@ -31,10 +31,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/account/page.js"
     ],
-    "/mine/page": [
+    "/auth/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/mine/page.js"
+      "static/chunks/app/auth/page.js"
+    ],
+    "/auth/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/layout.js"
     ]
   }
 }
