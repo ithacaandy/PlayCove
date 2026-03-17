@@ -1,135 +1,164 @@
 // app/auth/page.js
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 
 const supabase = getSupabaseClient();
 
 export default function AuthPage() {
   const router = useRouter();
-  const search = useSearchParams();
-  const next = useMemo(() => search?.get('next') || '/account', [search]);
+  const params = useSearchParams();
+  const redirectedFrom = params.get('redirectedFrom') || '/';
 
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // { type: 'info'|'success'|'error', msg: string }
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [message, setMessage] = useState('');
 
-  // If already signed in, bounce to next (default /account)
   useEffect(() => {
-    (async () => {
-      if (!supabase) return;
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) router.replace(next);
-    })();
-  }, [router, next]);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.replace('/');
+    });
+  }, [router]);
 
-  async function handleSignIn(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!supabase) {
-      setStatus({ type: 'error', msg: 'Supabase is not configured. Check .env.local and restart dev.' });
-      return;
+    setBusy(true);
+    setErr('');
+    setMessage('');
+
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        router.replace(redirectedFrom || '/');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+
+      const newUserId = data?.user?.id;
+
+      if (newUserId) {
+        const { error: profileError } = await supabase.from('profiles').upsert(
+          {
+            id: newUserId,
+            full_name: null,
+            city: null,
+            kid_ages: [],
+            avatar_url: null,
+          },
+          { onConflict: 'id' }
+        );
+
+        if (profileError) throw profileError;
+      }
+
+      setMessage('Account created. Check your email for a confirmation link before signing in.');
+      setPassword('');
+    } catch (e) {
+      setErr(e.message || 'Something went wrong');
+    } finally {
+      setBusy(false);
     }
-    if (!email || !password) {
-      setStatus({ type: 'error', msg: 'Enter both email and password.' });
-      return;
-    }
-
-    setLoading(true);
-    setStatus({ type: 'info', msg: 'Signing in…' });
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      setStatus({ type: 'error', msg: error.message });
-    } else if (data?.session) {
-      setStatus({ type: 'success', msg: 'Signed in!' });
-      // Nudge the Account/BottomNav to reflect new session immediately
-      router.replace(next);
-    } else {
-      setStatus({ type: 'error', msg: 'Unexpected response. Please try again.' });
-    }
-
-    setLoading(false);
   }
 
   return (
-    <div className="mx-auto max-w-sm px-3 py-10">
-      <h1 className="text-xl font-semibold">Sign in</h1>
-      <p className="mt-1 text-sm text-gray-600">Use your email and password.</p>
-
-      {status?.msg ? (
+    <div className="w-full">
+      <header className="mx-auto mb-6 flex w-full max-w-md items-center gap-2">
         <div
-          className={`mt-4 rounded-md border px-3 py-2 text-sm ${
-            status.type === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700'
-              : status.type === 'success'
-              ? 'border-green-200 bg-green-50 text-green-700'
-              : 'border-gray-200 bg-gray-50 text-gray-700'
+          style={{ backgroundColor: '#F6C74E' }}
+          className="h-8 w-8 rounded-full"
+        />
+        <span style={{ color: '#1F2937' }} className="text-lg font-semibold">
+          PlayCove
+        </span>
+      </header>
+
+      <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-black/10 bg-black/5 p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setMode('signin');
+            setErr('');
+            setMessage('');
+          }}
+          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+            mode === 'signin' ? 'bg-white shadow' : 'opacity-70 hover:opacity-100'
           }`}
         >
-          {status.msg}
-        </div>
-      ) : null}
+          Sign In
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode('signup');
+            setErr('');
+            setMessage('');
+          }}
+          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+            mode === 'signup' ? 'bg-white shadow' : 'opacity-70 hover:opacity-100'
+          }`}
+        >
+          Create Account
+        </button>
+      </div>
 
-      <form onSubmit={handleSignIn} className="mt-6 grid gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <label className="grid gap-1">
+          <span className="text-sm text-gray-900">Email</span>
           <input
             type="email"
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none ring-0 focus:border-gray-900"
-            placeholder="you@example.com"
+            required
+            autoComplete="email"
+            placeholder="you@family.com"
+            className="w-full border-0 border-b border-gray-800/30 bg-transparent px-1 py-2 outline-none ring-yellow-300 focus:border-gray-900 focus:ring-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            autoFocus
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Password</label>
-          <div className="mt-1 flex items-stretch rounded-md border">
-            <input
-              type={showPw ? 'text' : 'password'}
-              className="w-full rounded-l-md px-3 py-2 text-sm outline-none ring-0 focus:border-gray-900"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw((s) => !s)}
-              className="rounded-r-md border-l px-3 text-xs text-gray-600 hover:bg-gray-50"
-              aria-label={showPw ? 'Hide password' : 'Show password'}
-            >
-              {showPw ? 'Hide' : 'Show'}
-            </button>
-          </div>
-        </div>
+        <label className="grid gap-1">
+          <span className="text-sm text-gray-900">Password</span>
+          <input
+            type="password"
+            required
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            placeholder="••••••••"
+            className="w-full border-0 border-b border-gray-800/30 bg-transparent px-1 py-2 outline-none ring-yellow-300 focus:border-gray-900 focus:ring-2"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+
+        {err && <p className="text-sm text-red-600">{err}</p>}
+
+        {message && (
+          <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+            {message}
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={loading}
-          className="mt-2 inline-flex items-center justify-center rounded-md bg-yellow-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-yellow-400 disabled:opacity-60"
+          disabled={busy}
+          className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-black/90 disabled:opacity-50"
         >
-          {loading ? 'Signing in…' : 'Sign in'}
+          {busy ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
         </button>
+
+        <div className="mt-2 text-right text-sm">
+          <a className="text-gray-900 underline" href="/auth/forgot">
+            Forgot your password?
+          </a>
+        </div>
       </form>
-
-      <div className="mt-4 text-right text-xs">
-        <Link href="/auth/reset" className="text-gray-600 underline">Forgot password?</Link>
-      </div>
-
-      <div className="mt-8 flex items-center gap-3 text-sm">
-        <Link href="/" className="underline">Home</Link>
-        <Link href="/account" className="underline">Account</Link>
-        <Link href="/auth/debug" className="underline">Auth Debug</Link>
-      </div>
     </div>
   );
 }

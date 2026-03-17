@@ -1,12 +1,10 @@
-
-export const metadata = { title: "Sign in — PlayCove" };
-
+// app/auth/layout.js
 export default function AuthLayout({ children }) {
   return (
-    <main className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--brand)" }}>
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-soft p-8">
+    <div className="min-h-screen bg-[#F6C74E] flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         {children}
       </div>
-    </main>
+    </div>
   );
 }
