@@ -14,9 +14,18 @@
   --border:#E6E2D9;
   --cream:#FFF8E1;
   --paper:#FFFFFF;
+
   --accent:#5C7C5A;
   --accent-600:#4E6B4D;
   --accent-700:#425C41;
+
+  /* Clay palette */
+  --clay:#B9745A;
+  --clay-600:#9E624A;
+  --clay-700:#844F3B;
+  --clay-light:#D9A28F;
+  --sand:#E8D8C3;
+  --terracotta:#C65D3B;
 
   --radius:16px;
   --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.06);
@@ -48,11 +57,13 @@ html, body { background: var(--cream); color: var(--ink); }
   }
 
   .btn-ghost{ background:#fff; }
+
   .btn-primary{
     background: var(--sunshine);
     border-color: var(--sunshine);
   }
   .btn-primary:hover{ background: var(--sunshine-600); }
+
   .btn-accent{
     background: var(--accent);
     color:#fff;
@@ -60,10 +71,23 @@ html, body { background: var(--cream); color: var(--ink); }
   }
   .btn-accent:hover{ background: var(--accent-600); }
 
+  .btn-clay{
+    background: var(--clay);
+    color:#fff;
+    border-color: var(--clay);
+  }
+  .btn-clay:hover{ background: var(--clay-600); }
+
   .badge{
     @apply inline-flex items-center;
     gap:6px; padding:6px 10px; border-radius:999px;
     border:1px solid var(--border); background:#fff; color:var(--ink);
+  }
+
+  .badge-clay{
+    background: var(--clay-light);
+    border-color: var(--clay-light);
+    color: var(--ink);
   }
 
   .title{ font-weight:600; color:var(--ink); }
