@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import EnablePushButton from '@/app/components/EnablePushButton';
+import Avatar from '@/app/components/Avatar';
 
 const supabase = getSupabaseClient();
 
@@ -201,46 +201,34 @@ export default function AccountPage() {
         </div>
       ) : (
         <div className="mt-4 space-y-6">
-
-          {/* Identity Card */}
           <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-4">
-
-              <button
-                type="button"
-                onClick={openFilePicker}
-                className="relative h-16 w-16 overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200 transition hover:ring-gray-400 hover:scale-[1.03] active:scale-[0.98]"
-                aria-label="Upload avatar"
-                title="Upload avatar"
-              >
-                {avatarUrl ? (
-                  <Image
+              <div className="relative h-16 w-16 shrink-0 overflow-visible">
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  className="relative h-16 w-16 overflow-hidden rounded-full transition hover:scale-[1.03] active:scale-[0.98]"
+                  aria-label="Upload avatar"
+                  title="Upload avatar"
+                >
+                  <Avatar
+                    name={form.full_name}
                     src={avatarUrl}
-                    alt="Avatar"
-                    width={64}
-                    height={64}
-                    className="h-16 w-16 object-cover"
+                    size="md"
                   />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center text-sm font-semibold text-gray-600">
-                    {form.full_name
-                      ? form.full_name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase()
-                      : '?'}
-                  </div>
-                )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
+                      Uploading
+                    </div>
+                  )}
+                </button>
 
-                {uploadingAvatar && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs">
-                    Uploading
-                  </div>
-                )}
-
-                <div className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border border-white bg-black text-white shadow">
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  aria-label="Upload avatar"
+                  className="absolute -bottom-1 -right-1 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white bg-black text-white shadow"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -249,8 +237,8 @@ export default function AccountPage() {
                   >
                     <path d="M9 4.5a1 1 0 0 1 .8-.4h4.4a1 1 0 0 1 .8.4l1 1.3h2a2 2 0 0 1 2 2v8.9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.8a2 2 0 0 1 2-2h2l1-1.3Zm3 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z" />
                   </svg>
-                </div>
-              </button>
+                </button>
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -267,16 +255,13 @@ export default function AccountPage() {
                   {uploadingAvatar ? 'Uploading avatar…' : 'Tap photo to update'}
                 </div>
               </div>
-
             </div>
           </section>
 
-          {/* Profile Card */}
           <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">Profile</h2>
 
             <form onSubmit={handleSave} className="mt-4 grid gap-4">
-
               <label className="grid gap-1">
                 <span className="text-sm text-gray-900">Full name</span>
                 <input
@@ -326,16 +311,13 @@ export default function AccountPage() {
               >
                 {saving ? 'Saving…' : 'Save profile'}
               </button>
-
             </form>
           </section>
 
-          {/* Settings */}
           <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">Settings</h2>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-
               <button
                 onClick={signOut}
                 className="rounded-lg border border-black/10 px-3 py-2 text-sm hover:bg-gray-50"
@@ -344,10 +326,8 @@ export default function AccountPage() {
               </button>
 
               <EnablePushButton />
-
             </div>
           </section>
-
         </div>
       )}
     </div>
