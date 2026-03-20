@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import Avatar from "./Avatar";
 
@@ -24,7 +25,7 @@ export default function EventCard({ event, status = "going" }) {
 
   return (
     <Link href={`/events/${event.id}`}>
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--paper)]">
+      <div className="relative overflow-hidden rounded-2xl bg-[var(--paper)] shadow-sm">
         <div
           className="relative h-44 w-full bg-cover bg-center"
           style={
@@ -49,7 +50,7 @@ export default function EventCard({ event, status = "going" }) {
 
               <div className="pointer-events-auto">
                 <Avatar
-                  name={event?.owner?.full_name || ''}
+                  name={event?.owner?.full_name || ""}
                   src={event?.owner?.avatar_url || null}
                   size="sm"
                 />

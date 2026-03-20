@@ -179,81 +179,83 @@ export default function HomePage() {
   }, [myEvents, rsvps, invites]);
 
   return (
-    <div className="-mx-4 min-h-screen bg-[var(--stone)] px-4 py-5">
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Avatar
-            name={myProfile?.full_name || ''}
-            src={myProfile?.avatar_url || null}
-            size="sm"
-            bgClassName="bg-[var(--paper)]"
-          />
-          <h1 className="text-2xl font-semibold text-white">Home</h1>
+    <div className="min-h-screen bg-[var(--stone)] px-4 py-5">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar
+              name={myProfile?.full_name || ''}
+              src={myProfile?.avatar_url || null}
+              size="sm"
+              bgClassName="bg-[var(--paper)]"
+            />
+            <h1 className="text-2xl font-semibold text-white">Home</h1>
+          </div>
+
+          <button type="button" aria-label="Open filters" className="flex flex-col items-end gap-[4px]">
+            <span className="block h-[2px] w-6 rounded-full bg-white" />
+            <span className="block h-[2px] w-4 rounded-full bg-white" />
+            <span className="block h-[2px] w-2 rounded-full bg-white" />
+          </button>
         </div>
 
-        <button type="button" aria-label="Open filters" className="flex flex-col items-end gap-[4px]">
-          <span className="block h-[2px] w-6 rounded-full bg-white" />
-          <span className="block h-[2px] w-4 rounded-full bg-white" />
-          <span className="block h-[2px] w-2 rounded-full bg-white" />
-        </button>
-      </div>
+        {err && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {err}
+          </div>
+        )}
 
-      {err && (
-        <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {err}
-        </div>
-      )}
+        {loading ? (
+          <div className="mt-5 space-y-3 animate-pulse">
+            <div className="h-40 rounded-2xl bg-white/20" />
+            <div className="h-40 rounded-2xl bg-white/20" />
+          </div>
+        ) : !me ? (
+          <div className="mt-5 rounded-md border border-white/20 bg-white/10 px-3 py-3 text-white">
+            Please <Link href="/auth" className="underline">sign in</Link> to see your feed.
+          </div>
+        ) : !hasAnything ? (
+          <div className="mt-5 text-white">
+            Nothing yet. Create an event from <Link href="/new" className="underline">New</Link> or join a group in{' '}
+            <Link href="/discover" className="underline">Discover</Link>.
+          </div>
+        ) : (
+          <>
+            {invites.length > 0 && (
+              <section className="mb-6">
+                <h2 className="text-base font-semibold text-white">Invitations</h2>
+                <ul className="mt-3 grid gap-3">
+                  {invites.map((inv) => (
+                    <li
+                      key={inv.id}
+                      className="rounded-lg border border-white/20 bg-white/10 p-3 text-white"
+                    >
+                      <div className="font-medium">
+                        {inv.group?.name || 'Group Invitation'}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-200">
+                        Status: {inv.status}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-      {loading ? (
-        <div className="mt-5 space-y-3 animate-pulse">
-          <div className="h-40 rounded-2xl bg-white/20" />
-          <div className="h-40 rounded-2xl bg-white/20" />
-        </div>
-      ) : !me ? (
-        <div className="mt-5 rounded-md border border-white/20 bg-white/10 px-3 py-3 text-white">
-          Please <Link href="/auth" className="underline">sign in</Link> to see your feed.
-        </div>
-      ) : !hasAnything ? (
-        <div className="mt-5 text-white">
-          Nothing yet. Create an event from <Link href="/new" className="underline">New</Link> or join a group in{' '}
-          <Link href="/discover" className="underline">Discover</Link>.
-        </div>
-      ) : (
-        <>
-          {invites.length > 0 && (
-            <section className="mb-6">
-              <h2 className="text-base font-semibold text-white">Invitations</h2>
-              <ul className="mt-3 grid gap-3">
-                {invites.map((inv) => (
-                  <li
-                    key={inv.id}
-                    className="rounded-lg border border-white/20 bg-white/10 p-3 text-white"
-                  >
-                    <div className="font-medium">
-                      {inv.group?.name || 'Group Invitation'}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-200">
-                      Status: {inv.status}
-                    </div>
-                  </li>
+            <section>
+              <div className="grid grid-cols-2 gap-3">
+                {myEvents.map((ev) => (
+                  <EventCard key={`host-${ev.id}`} event={ev} status="host" />
                 ))}
-              </ul>
+
+                {rsvps.map((ev) => (
+                  <EventCard key={`rsvp-${ev.id}`} event={ev} status="going" />
+                ))}
+              </div>
             </section>
-          )}
-
-          <section>
-            <div className="grid grid-cols-2 gap-3">
-              {myEvents.map((ev) => (
-                <EventCard key={`host-${ev.id}`} event={ev} status="host" />
-              ))}
-
-              {rsvps.map((ev) => (
-                <EventCard key={`rsvp-${ev.id}`} event={ev} status="going" />
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
