@@ -12,16 +12,17 @@ export default function Avatar({
   bgClassName = '',
   borderClassName = '',
 }) {
-  const [broken, setBroken] = useState(false);
+  const [failedSrc, setFailedSrc] = useState(null);
 
   const initials = useMemo(() => getInitials(name), [name]);
-  const showImage = !!src && !broken;
+  const showImage = !!src && failedSrc !== src;
 
   const sizeMap = {
     xs: 'h-7 w-7 text-[10px]',
     sm: 'h-9 w-9 text-xs',
     md: 'h-16 w-16 text-lg',
     lg: 'h-20 w-20 text-xl',
+    xl: 'h-[88px] w-[88px] text-[44px]',
   };
 
   return (
@@ -40,7 +41,7 @@ export default function Avatar({
           fill
           sizes="80px"
           className="object-cover"
-          onError={() => setBroken(true)}
+          onError={() => setFailedSrc(src)}
         />
       ) : (
         <div

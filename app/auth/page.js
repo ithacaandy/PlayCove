@@ -1,30 +1,39 @@
 // app/auth/page.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { safeReturnPath } from '../../lib/auth-navigation';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 
 const supabase = getSupabaseClient();
 
-export default function AuthPage() {
+export default function AuthPage() { return <Suspense fallback={<p className="p-6">Loading sign in…</p>}><AuthForm /></Suspense>; }
+function AuthForm() {
   const router = useRouter();
+
   const params = useSearchParams();
-  const redirectedFrom = params.get('redirectedFrom') || '/';
+  const redirectedFrom = safeReturnPath(params.get('redirectedFrom') || params.get('next'));
 
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(params.get('error') === 'google' ? 'Google sign-in could not be completed. Please try again.' : '');
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace('/');
-    });
-  }, [router]);
+  // Middleware handles existing sessions; avoid stale browser session redirects after logout.
 
+  async function signInWithGoogle() {
+    if(busy) return;
+    setBusy(true);setErr('');
+    try {
+      const callback=new URL('/auth/callback',window.location.origin);
+      callback.searchParams.set('next',redirectedFrom);
+      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:callback.toString()}});
+      if(error) throw error;
+    } catch(error) {setErr(error.message || 'Google sign-in is unavailable.');setBusy(false);}
+  }
   async function handleSubmit(e) {
     e.preventDefault();
     setBusy(true);
@@ -36,31 +45,21 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        router.replace(redirectedFrom || '/');
+        router.replace(redirectedFrom);
+        router.refresh();
         return;
       }
 
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
 
-      const newUserId = data?.user?.id;
-
-      if (newUserId) {
-        const { error: profileError } = await supabase.from('profiles').upsert(
-          {
-            id: newUserId,
-            full_name: null,
-            city: null,
-            kid_ages: [],
-            avatar_url: null,
-          },
-          { onConflict: 'id' }
-        );
-
-        if (profileError) throw profileError;
+      // Create the profile through Account after confirmation; do not overwrite existing profiles.
+      if (data?.session) {
+        router.replace(redirectedFrom);
+        router.refresh();
+        return;
       }
-
-      setMessage('Account created. Check your email for a confirmation link before signing in.');
+      setMessage('Check your email for a confirmation link before signing in.');
       setPassword('');
     } catch (e) {
       setErr(e.message || 'Something went wrong');
@@ -70,7 +69,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--terracotta)] px-4 py-10">
+    <div className="min-h-screen bg-[var(--cream)] px-4 py-10">
       <div className="mx-auto w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <header className="mx-auto mb-6 flex w-full max-w-md items-center gap-2">
           <div
@@ -78,10 +77,12 @@ export default function AuthPage() {
             className="h-8 w-8 rounded-full"
           />
           <span style={{ color: '#1F2937' }} className="text-lg font-semibold">
-            PlayCove
+            LinkLemon
           </span>
         </header>
 
+        <button type="button" disabled={busy} onClick={signInWithGoogle} className="mb-5 flex w-full items-center justify-center rounded-xl border border-gray-300 px-4 py-3 font-medium hover:bg-gray-50 disabled:opacity-50">Continue with Google</button>
+        <p className="mb-4 text-center text-xs text-gray-500">or continue with email</p>
         <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-black/10 bg-black/5 p-1">
           <button
             type="button"

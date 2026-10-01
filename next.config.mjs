@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: process.env.LINKLEMON_BUILD_DIR || '.next',
 
   images: {
     // Use ONLY remotePatterns (domains is deprecated)

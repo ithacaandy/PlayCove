@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import SectionFilters from '../components/SectionFilters';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 import Avatar from '../components/Avatar';
+import { isActiveMembership } from '../../lib/group-membership';
 
 const supabase = getSupabaseClient();
 
 export default function MyGroupsPage() {
+  const [sectionFilters, setSectionFilters] = useState({membership:'all'});
   const [sessionUser, setSessionUser] = useState(null);
   const [myProfile, setMyProfile] = useState(null);
   const [owned, setOwned] = useState([]);
@@ -46,7 +49,7 @@ export default function MyGroupsPage() {
 
       await refresh(user.id);
 
-      const { data: sub1 } = supabase
+      const sub1 = supabase
         .channel('groups-realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, () => refresh(user.id))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members' }, () => refresh(user.id))
@@ -79,6 +82,7 @@ export default function MyGroupsPage() {
     if (memErr) setErr(memErr.message);
 
     const memberGroups = (memRows || [])
+      .filter((r) => r.group && (isActiveMembership(r) || r.status === 'pending'))
       .map((r) => ({
         ...r.group,
         _membership: {
@@ -99,21 +103,26 @@ export default function MyGroupsPage() {
     const ownedCards = owned.map((g) => ({
       ...g,
       roleLabel: 'Admin',
+      _managed: true,
       colorClass: 'bg-[#F4C20D]',
     }));
 
     const memberCards = member.map((g, index) => ({
       ...g,
-      roleLabel: normalizeRole(g?._membership?.role),
+      roleLabel: g?._membership?.status === 'pending' ? 'Pending' : normalizeRole(g?._membership?.role),
       colorClass: index % 3 === 0 ? 'bg-[#E11D35]' : index % 3 === 1 ? 'bg-[#F4C20D]' : 'bg-[#6B7280]',
     }));
 
-    return [...ownedCards, ...memberCards];
-  }, [owned, member]);
+    return [...ownedCards, ...memberCards].filter((group) => {
+      const pending = group._membership?.status === 'pending';
+      const managing = group._managed || group.owner_id === sessionUser?.id || ['owner','admin'].includes(group._membership?.role) && !pending;
+      return sectionFilters.membership === 'all' || (sectionFilters.membership === 'pending' ? pending : sectionFilters.membership === 'managing' ? managing : !pending && !managing);
+    });
+  }, [owned, member, sectionFilters, sessionUser]);
 
   if (!isAuthed && !loading) {
     return (
-      <div className="min-h-screen bg-[#D7D2C9] px-4 py-5">
+      <div className="min-h-screen bg-[var(--cream)] px-4 py-5">
         <div className="mx-auto w-full max-w-md">
           <div className="rounded-2xl border border-black/20 bg-white/50 px-4 py-4 text-sm text-gray-900">
             You’re not signed in. <Link href="/auth" className="underline">Go to sign in</Link>.
@@ -124,7 +133,7 @@ export default function MyGroupsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#D7D2C9] px-4 py-5">
+    <div className="min-h-screen bg-[var(--cream)] px-4 py-5">
       <div className="mx-auto w-full max-w-md pb-24">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -139,15 +148,7 @@ export default function MyGroupsPage() {
             <h1 className="text-2xl font-semibold text-black">My Groups</h1>
           </div>
 
-          <button
-            type="button"
-            aria-label="Open group filters"
-            className="flex flex-col items-end gap-[4px]"
-          >
-            <span className="block h-[2px] w-6 rounded-full bg-black" />
-            <span className="block h-[2px] w-4 rounded-full bg-black" />
-            <span className="block h-[2px] w-2 rounded-full bg-black" />
-          </button>
+          <SectionFilters title="Group" sections={[{key:'membership',label:'Groups',options:[['all','All'],['managing','Managing'],['joined','Joined'],['pending','Pending']]}]} values={sectionFilters} onChange={setSectionFilters} light={false} />
         </div>
 
         <Link

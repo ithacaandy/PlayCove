@@ -4,7 +4,7 @@ import Link from "next/link";
 import Avatar from "./Avatar";
 
 export default function EventCard({ event, status = "going" }) {
-  const date = event?.date_iso ? new Date(event.date_iso) : null;
+  const date = event?.date_iso ? new Date(event.date_iso + 'T12:00:00') : null;
 
   const month = date
     ? String(date.getMonth() + 1).padStart(2, "0")
@@ -45,7 +45,7 @@ export default function EventCard({ event, status = "going" }) {
           <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
             <div className="flex items-start justify-between">
               <div className="pointer-events-auto rounded-full border border-[var(--border)] bg-white px-2 py-1 text-[11px] text-[var(--ink)] shadow-sm">
-                {statusMap[status]}
+                {event.cancelled_at ? "Cancelled" : statusMap[status]}
               </div>
 
               <div className="pointer-events-auto">

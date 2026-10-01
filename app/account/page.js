@@ -2,69 +2,113 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import EnablePushButton from '@/app/components/EnablePushButton';
 import Avatar from '@/app/components/Avatar';
+import { parseKidAges } from '@/lib/profile';
 
 const supabase = getSupabaseClient();
 
 export default function AccountPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [error, setError] = useState('');
-  const [emailNotifications, setEmailNotifications] = useState(false);
-  const [profileVisible, setProfileVisible] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
+
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({ full_name: '', city: '', kid_ages: '' });
+
 
   const fileInputRef = useRef(null);
   const user = session?.user || null;
 
   useEffect(() => {
-    if (!supabase) return;
-
+    let mounted = true;
     (async () => {
-      setLoading(true);
-      setError('');
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentSession = sessionData?.session || null;
-      setSession(currentSession);
-
-      const uid = currentSession?.user?.id;
-
-      if (uid) {
-        const { data: prof, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, city, kid_ages, avatar_url')
-          .eq('id', uid)
-          .maybeSingle();
-
-        if (profileError) {
-          setError(profileError.message || 'Could not load profile.');
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        const currentSession = sessionData?.session || null;
+        if (!mounted) return;
+        setSession(currentSession);
+        const uid = currentSession?.user?.id;
+        if (uid) {
+          const { data: prof, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, full_name, city, kid_ages, avatar_url')
+            .eq('id', uid)
+            .maybeSingle();
+          if (profileError) throw profileError;
+          if (!mounted) return;
+          setProfile(prof || null);
+          setProfileReady(true);
+          setAvatarUrl(prof?.avatar_url || currentSession.user.user_metadata?.avatar_url ||
+            currentSession.user.user_metadata?.picture || null);
         }
-
-        setProfile(prof || null);
-
-        const metaUrl =
-          currentSession?.user?.user_metadata?.avatar_url ||
-          currentSession?.user?.user_metadata?.picture ||
-          null;
-
-        setAvatarUrl(prof?.avatar_url || metaUrl || null);
+      } catch (e) {
+        if (mounted) setError(e.message || 'Could not load your profile. Please reload and try again.');
+      } finally {
+        if (mounted) setLoading(false);
       }
-
-      setLoading(false);
     })();
+    return () => { mounted = false; };
   }, []);
+  function editProfile() {
+    setForm({
+      full_name: profile?.full_name || '',
+      city: profile?.city || '',
+      kid_ages: Array.isArray(profile?.kid_ages) ? profile.kid_ages.join(', ') : '',
+    });
+    setError('');
+    setMessage('');
+    setEditing(true);
+  }
+
+  async function saveProfile(e) {
+    e.preventDefault();
+    if (!user || saving || !profileReady || uploadingAvatar) return;
+    setError('');
+    setMessage('');
+    setSaving(true);
+    try {
+      const payload = {
+        id: user.id,
+        full_name: form.full_name.trim() || null,
+        city: form.city.trim() || null,
+        kid_ages: parseKidAges(form.kid_ages),
+      };
+      const { data, error: saveError } = await supabase
+        .from('profiles')
+        .upsert(payload, { onConflict: 'id' })
+        .select('id, full_name, city, kid_ages, avatar_url')
+        .single();
+      if (saveError) throw saveError;
+      setProfile(data);
+      setEditing(false);
+      setMessage('Profile saved.');
+    } catch (e) {
+      setError(e.message || 'Could not save your profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleAvatarChange(e) {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || saving || !profileReady) return;
 
     setUploadingAvatar(true);
     setError('');
+    setMessage('');
 
     try {
       if (!file.type.startsWith('image/')) {
@@ -93,7 +137,6 @@ export default function AccountPage() {
       }
 
       const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
-      setAvatarUrl(cacheBustedUrl);
 
       const { error: profileError } = await supabase.from('profiles').upsert(
         {
@@ -104,6 +147,8 @@ export default function AccountPage() {
       );
 
       if (profileError) throw profileError;
+      setAvatarUrl(cacheBustedUrl);
+      setMessage('Avatar updated.');
 
       setProfile((prev) => ({
         ...(prev || {}),
@@ -118,16 +163,33 @@ export default function AccountPage() {
   }
 
   function openFilePicker() {
-    if (!uploadingAvatar) {
+    if (!uploadingAvatar && !saving && profileReady) {
       fileInputRef.current?.click();
     }
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    location.href = '/';
+  async function handleSignOut(e) {
+    e.preventDefault();
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError('');
+    try {
+      const response = await fetch('/api/signout', {
+        method: 'POST', headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(20000),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.signedOut) throw new Error(result.error || 'Could not sign out. Please try again.');
+      setSession(null);
+      setProfile(null);
+      router.replace('/auth');
+      router.refresh();
+    } catch (error) {
+      setSignOutError(error.name === 'TimeoutError' || error.name === 'AbortError'
+        ? 'Sign-out took too long. Reload this page to check your session before trying again.'
+        : error.message || 'Could not sign out. Please try again.');
+      setSigningOut(false);
+    }
   }
-
   const displayName =
     profile?.full_name?.trim() || user?.email?.split('@')[0] || 'You';
 
@@ -179,6 +241,7 @@ export default function AccountPage() {
           <button
             type="button"
             onClick={openFilePicker}
+            disabled={uploadingAvatar || saving || !profileReady}
             className="shrink-0 rounded-full"
             aria-label={uploadingAvatar ? 'Uploading avatar' : 'Update avatar'}
           >
@@ -213,10 +276,55 @@ export default function AccountPage() {
         />
 
         {error ? (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         ) : null}
+
+        {message ? (
+          <p role="status" className="mb-4 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">
+            {message}
+          </p>
+        ) : null}
+
+        {editing ? (
+          <form onSubmit={saveProfile} className="mb-8 rounded-2xl border border-black/20 bg-white p-4">
+            <h1 className="mb-4 text-lg font-semibold">Edit profile</h1>
+            <fieldset disabled={saving} className="grid gap-4">
+              <label className="grid gap-1 text-sm">
+                Full name
+                <input value={form.full_name} maxLength={100} autoComplete="name"
+                  onChange={(e) => setForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                  className="rounded-lg border border-black/30 px-3 py-2" />
+              </label>
+              <label className="grid gap-1 text-sm">
+                City
+                <input value={form.city} maxLength={120} autoComplete="address-level2"
+                  onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                  className="rounded-lg border border-black/30 px-3 py-2" />
+              </label>
+              <label className="grid gap-1 text-sm">
+                Kid ages
+                <input value={form.kid_ages} aria-describedby="kid-ages-help" maxLength={100}
+                  onChange={(e) => setForm((prev) => ({ ...prev, kid_ages: e.target.value }))}
+                  className="rounded-lg border border-black/30 px-3 py-2" />
+                <span id="kid-ages-help" className="text-xs text-gray-600">Ages 0–18, separated by commas. For example: 3, 7. Leave blank to omit.</span>
+              </label>
+              <div className="flex gap-3">
+                <button type="submit" className="rounded-full bg-black px-4 py-2 text-sm text-white">
+                  {saving ? 'Saving…' : 'Save profile'}
+                </button>
+                <button type="button" onClick={() => { setEditing(false); setError(''); }}
+                  className="rounded-full border border-black/30 px-4 py-2 text-sm">Cancel</button>
+              </div>
+            </fieldset>
+          </form>
+        ) : (
+          <button type="button" onClick={editProfile} disabled={uploadingAvatar || !profileReady}
+            className="mb-8 rounded-full border border-black/30 bg-white px-4 py-2 text-sm disabled:opacity-50">
+            Edit profile
+          </button>
+        )}
 
         <div className="space-y-5 px-6">
           <div className="flex items-center justify-between gap-4">
@@ -225,68 +333,25 @@ export default function AccountPage() {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-[14px] text-black">Enable Email Notifications</span>
-            <button
-              type="button"
-              onClick={() => setEmailNotifications((v) => !v)}
-              aria-pressed={emailNotifications}
-              className={`relative h-6 w-10 rounded-full border transition ${
-                emailNotifications
-                  ? 'border-[#B38F00] bg-[#F4C20D]'
-                  : 'border-black/30 bg-[#D9D9D9]'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full transition ${
-                  emailNotifications
-                    ? 'left-[18px] bg-[#F6C74E]'
-                    : 'left-0.5 bg-[#666666]'
-                }`}
-              />
-            </button>
+            <span className="text-[14px] text-black">Email notifications</span>
+            <span className="text-xs text-gray-600">Coming soon</span>
           </div>
-
-          <div>
-            <Link
-              href="/account/notifications"
-              className="text-[14px] text-[#2563EB] underline"
-            >
-              Notification Settings
-            </Link>
-          </div>
-
           <div className="flex items-center justify-between gap-4">
-            <span className="text-[14px] text-black">Profile Visibility</span>
-            <button
-              type="button"
-              onClick={() => setProfileVisible((v) => !v)}
-              aria-pressed={profileVisible}
-              className={`relative h-6 w-10 rounded-full border transition ${
-                profileVisible
-                  ? 'border-[#B38F00] bg-[#F4C20D]'
-                  : 'border-black/30 bg-[#D9D9D9]'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full transition ${
-                  profileVisible
-                    ? 'left-[18px] bg-[#F6C74E]'
-                    : 'left-0.5 bg-[#666666]'
-                }`}
-              />
-            </button>
+            <span className="text-[14px] text-black">Profile visibility settings</span>
+            <span className="text-xs text-gray-600">Coming soon</span>
           </div>
         </div>
 
-        <div className="mt-24 px-10">
+        <form action="/api/signout" method="post" onSubmit={handleSignOut} className="mt-24 px-10">
+          {signOutError && <p role="alert" className="mb-3 text-sm text-red-700">{signOutError}</p>}
           <button
-            type="button"
-            onClick={signOut}
+            type="submit"
+            disabled={signingOut}
             className="w-full rounded-full bg-[#111111] px-4 py-3 text-base font-medium text-white"
           >
-            Sign Out
+            {signingOut ? 'Signing out…' : 'Sign Out'}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

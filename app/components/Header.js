@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import AccountAvatar from './AccountAvatar';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 
 const supabase = getSupabaseClient();
 
-export default function Header() {
+export default function Header({ showAccount = false }) {
   const pathname = usePathname() || '/';
   const [user, setUser] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -52,7 +53,7 @@ export default function Header() {
   return (
     <header className={`sticky top-0 z-40 border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-shadow ${scrolled ? 'shadow-[0_2px_12px_rgba(0,0,0,0.06)]' : 'shadow-none'}`}>
       <div className="mx-auto flex h-14 max-w-screen-md items-center justify-between px-3">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-gray-900">PlayCove</Link>
+        <Link href="/" className="text-lg font-semibold tracking-tight text-gray-900">LinkLemon</Link>
 
         {/* Even distribution */}
         <nav className="hidden md:grid grid-cols-3 gap-2 w-full max-w-xl mx-3">
@@ -69,14 +70,7 @@ export default function Header() {
 
         <div className="hidden md:flex items-center gap-2">
           {user ? (
-            <Link href="/account" className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 overflow-hidden" aria-label="Account">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-              ) : (
-                <span className="text-[12px] font-medium text-gray-600">{initials || '🙂'}</span>
-              )}
-            </Link>
+            showAccount ? <AccountAvatar /> : null
           ) : (
             <Link href="/auth" className="rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Sign in</Link>
           )}

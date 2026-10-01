@@ -9,10 +9,17 @@ const PUBLIC_PATHS = new Set([
   '/auth/reset',
   '/auth/signup',
   '/auth/callback',
+  '/api/signout',
+  '/invite',
+  '/api/groups/accept',
+  '/event-invite',
+  '/api/events/accept',
 ]);
 
 export async function middleware(req) {
   const { nextUrl, headers, cookies: reqCookies } = req;
+  // Logout validates origin and manages its own cookies; do not refresh a session before clearing it.
+  if (nextUrl.pathname.startsWith('/brand/') || nextUrl.pathname === '/api/signout' || nextUrl.pathname === '/auth/callback' || nextUrl.pathname === '/api/auth/callback') return NextResponse.next();
 
   const res = NextResponse.next();
   const supabase = createServerClient(

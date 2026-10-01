@@ -3,7 +3,7 @@ import './globals.css';
 import NavFrame from './components/NavFrame';
 
 export const metadata = {
-  title: 'PlayCove',
+  title: 'LinkLemon',
   description: 'Connect with nearby families through groups and playdate events.',
 };
 

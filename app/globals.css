@@ -3,19 +3,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PlayCove design tokens */
+/* LinkLemon design tokens */
 :root {
-  --sunshine: #FFCD02;
+  --sunshine: #F4D936;
   --sunshine-600: #E5B902;
   --sunshine-700: #CFA402;
 
   --ink: #1A1A1A;
   --stone: #666666;
   --border: #E6E2D9;
-  --cream: #FFF8E1;
+  --cream: #FFFBEA;
   --paper: #FFFFFF;
 
-  --accent: #5C7C5A;
+  --accent: #385B3F;
   --accent-600: #4E6B4D;
   --accent-700: #425C41;
 
@@ -25,7 +25,7 @@
   --clay-700: #844F3B;
   --clay-light: #D9A28F;
   --sand: #E8D8C3;
-  --terracotta: #C65D3B;
+  --terracotta: #385B3F;
 
   --radius: 16px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 24px rgba(0, 0, 0, 0.06);

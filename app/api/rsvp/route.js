@@ -1,21 +1,28 @@
-import { NextResponse } from "next/server";
-import { createServerSupabase } from "../../../lib/supabase-server";
+import { NextResponse } from 'next/server';
+import { createServerSupabase } from '../../../lib/supabase-server';
+import { setEventRsvp } from '../../../lib/event-rsvp';
 
-export async function POST(req){
-  const supabase = createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if(!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const event = new URL(req.url).searchParams.get("event");
-  if(!event) return NextResponse.json({ error: "Missing event" }, { status: 400 });
-  const { data: existing } = await supabase.from("rsvps").select("*").eq("event_id", event).eq("user_id", user.id).maybeSingle();
-  if(existing){
-    await supabase.from("rsvps").delete().eq("event_id", event).eq("user_id", user.id);
-  } else {
-    const { data: eventRow } = await supabase.from("events").select("capacity, id, is_hidden").eq("id", event).single();
-    const { count } = await supabase.from("rsvps").select("*", { count: "exact", head: true }).eq("event_id", event);
-    if(eventRow?.is_hidden) return NextResponse.json({ error: "Event hidden" }, { status: 400 });
-    if((count||0) >= (eventRow?.capacity||0)) return NextResponse.json({ error: "Event full" }, { status: 400 });
-    await supabase.from("rsvps").insert({ event_id: event, user_id: user.id });
+export async function POST(req) {
+  try {
+    const supabase = createServerSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 });
+    const params = new URL(req.url).searchParams;
+    const event = params.get('event');
+    if (!event || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(event)) return NextResponse.json({ error: 'Invalid event.' }, { status: 400 });
+    const action = params.get('action');
+    if (action && !['join', 'leave'].includes(action)) return NextResponse.json({ error: 'Invalid RSVP action.' }, { status: 400 });
+    let attending = action === 'join';
+    if (!action) {
+      const { data, error } = await supabase.from('rsvps').select('event_id')
+        .eq('event_id', event).eq('user_id', user.id).maybeSingle();
+      if (error) throw error;
+      attending = !data;
+    }
+    await setEventRsvp(supabase, event, user.id, attending);
+    if (req.headers.get('accept')?.includes('application/json')) return NextResponse.json({ attending });
+    return NextResponse.redirect(new URL('/events/' + event, req.url), 303);
+  } catch (error) {
+    return NextResponse.json({ error: error.message || 'Could not update your RSVP.' }, { status: 400 });
   }
-  return NextResponse.redirect(new URL("/", req.url));
 }

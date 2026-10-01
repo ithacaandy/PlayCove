@@ -1,1 +1,8 @@
-export default function Callback(){return(<main className="container py-6"><h2 className="text-lg font-semibold">Email verified</h2><p className="text-gray-600 mt-2">You can close this tab and return to the app.</p></main>);}
+import { redirect } from 'next/navigation';
+import { safeReturnPath } from '../../../lib/auth-navigation';
+export default function Callback({searchParams}) {
+ const params=new URLSearchParams();
+ for(const key of ['code','error']) if(typeof searchParams[key]==='string') params.set(key,searchParams[key]);
+ params.set('next',safeReturnPath(searchParams.next));
+ redirect('/api/auth/callback?'+params.toString());
+}

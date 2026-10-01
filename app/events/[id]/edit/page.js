@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { parseEventInput } from '../../../../lib/event-validation';
 import { getSupabaseClient } from '../../../../lib/supabaseClient';
 
 const supabase = getSupabaseClient();
 
 export default function EditEventPage() {
   const { id } = useParams();
-  const router = useRouter();
+
 
   const [sessionUser, setSessionUser] = useState(null);
   const [event, setEvent] = useState(null);
@@ -41,6 +42,7 @@ export default function EditEventPage() {
     }
 
     (async () => {
+      try {
       const { data: sres } = await supabase.auth.getSession();
       const user = sres?.session?.user || null;
       setSessionUser(user);
@@ -81,7 +83,9 @@ export default function EditEventPage() {
       setTags(Array.isArray(ev.tags) ? ev.tags.join(', ') : '');
       setContact(ev.contact || '');
 
-      setLoading(false);
+      } catch (error) {
+        setStatus({ type: 'error', msg: error.message || 'Could not load this event.' });
+      } finally { setLoading(false); }
     })();
   }, [id]);
 
@@ -93,56 +97,36 @@ export default function EditEventPage() {
     e.preventDefault();
     if (!isOwner) return;
 
-    if (!title.trim() || !dateIso || !startTime || !locationName.trim() || !city.trim()) {
-      setStatus({
-        type: 'error',
-        msg: 'Title, date, start time, location, and city are required.',
-      });
-      return;
-    }
-
+    if (saving) return;
     setSaving(true);
     setStatus({ type: 'info', msg: 'Saving…' });
-
-    const payload = {
-      title: title.trim(),
-      description: description.trim() || null,
-      date_iso: dateIso,
-      start_time: startTime + (startTime.length === 5 ? ':00' : ''),
-      end_time: endTime ? endTime + (endTime.length === 5 ? ':00' : '') : null,
-      location_name: locationName.trim(),
-      city: city.trim(),
-      map_url: mapUrl.trim() || null,
-      image_url: imageUrl.trim() || null,
-      age_min: Number(ageMin) || 0,
-      age_max: Number(ageMax) || 16,
-      capacity: Number(capacity) || 6,
-      tags: toTextArray(tags),
-      contact: contact.trim() || null,
-    };
-
-    const { error } = await supabase
-      .from('events')
-      .update(payload)
-      .eq('id', id)
-      .eq('owner_id', sessionUser.id);
-
-    if (error) {
-      setStatus({ type: 'error', msg: `Update failed: ${error.message}` });
-      setSaving(false);
-      return;
-    }
-
-    setStatus({ type: 'success', msg: 'Saved!' });
-    router.replace(`/events/${id}`);
+    try {
+      const fd = new FormData();
+      for (const [key, value] of Object.entries({ title, description, date_iso: dateIso,
+        start_time: startTime, end_time: endTime, location_name: locationName, city,
+        map_url: mapUrl, age_min: ageMin, age_max: ageMax, capacity, tags, contact })) fd.set(key, value);
+      const parsed = parseEventInput(fd, sessionUser.id, { allowPast: dateIso === event.date_iso });
+      const { owner_id, group_id, visibility, is_hidden, ...payload } = parsed;
+      const trimmedImage = imageUrl.trim();
+      if (trimmedImage && !['http:', 'https:'].includes(new URL(trimmedImage).protocol)) throw new Error('Image links must start with http or https.');
+      payload.image_url = trimmedImage || null;
+      const { data: updated, error } = await supabase.from('events').update(payload)
+        .eq('id', id).eq('owner_id', sessionUser.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('This event could not be updated. Reload and check your access.');
+      setStatus({ type: 'success', msg: 'Saved!' });
+      window.location.assign(`/events/${id}`);
+    } catch (error) {
+      setStatus({ type: 'error', msg: error.message || 'Could not save changes. Please try again.' });
+    } finally { setSaving(false); }
   }
-
   if (loading) return <Skeleton />;
 
   if (!event) {
     return (
-      <div className="py-6">
-        <h1 className="text-xl font-semibold text-[var(--ink)]">Event not found</h1>
+      <div className="mx-auto max-w-md px-4 py-6 pb-24">
+        <h1 className="text-xl font-semibold text-[var(--ink)]">Event unavailable</h1>
+        {status?.msg && <p role="alert" className="mt-3 text-red-700">{status.msg}</p>}
         <Link href="/mine" className="btn btn-ghost mt-4 inline-flex">
           Back to My Events
         </Link>
@@ -152,7 +136,7 @@ export default function EditEventPage() {
 
   if (!isOwner) {
     return (
-      <div className="py-6">
+      <div className="mx-auto max-w-md px-4 py-6 pb-24">
         <h1 className="text-xl font-semibold text-[var(--ink)]">Edit Event</h1>
         <p className="mt-2 text-gray-600">You’re not the owner of this event.</p>
         <div className="mt-4">
@@ -165,7 +149,7 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="py-6">
+    <div className="mx-auto max-w-md px-4 py-6 pb-24">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-[var(--ink)]">Edit Event</h1>
         <Link href={`/events/${id}`} className="btn btn-ghost">
@@ -173,8 +157,11 @@ export default function EditEventPage() {
         </Link>
       </div>
 
+      <Link href={`/new?clone=${id}`} className="mt-3 block text-sm underline">Clone or create a recurring series</Link>
+
       {status?.msg ? (
         <div
+          role={status.type === 'error' ? 'alert' : 'status'}
           className={`mt-4 rounded-md border px-3 py-2 text-sm ${
             status.type === 'error'
               ? 'border-red-200 bg-red-50 text-red-700'
@@ -390,8 +377,7 @@ export default function EditEventPage() {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
-      {children}
+      <label className="block text-sm font-medium text-gray-700">{label}{children}</label>
     </div>
   );
 }

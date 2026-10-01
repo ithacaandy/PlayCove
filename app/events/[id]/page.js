@@ -1,6 +1,9 @@
 'use client';
+import { localDateIso } from '../../../lib/event-validation';
 
 import Link from 'next/link';
+import ProfileAvatar from '../../components/Avatar';
+import { setEventRsvp } from '../../../lib/event-rsvp';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '../../../lib/supabaseClient';
@@ -16,11 +19,12 @@ export default function EventDetailsPage() {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirmCancel,setConfirmCancel]=useState(false);
   const [flash, setFlash] = useState(null);
 
   const iOwn = useMemo(() => me?.id && ev?.owner_id === me.id, [me, ev]);
   const iRsvpd = useMemo(() => me?.id && rsvps.some((r) => r.user_id === me.id), [me, rsvps]);
-  const canSeeRsvps = iOwn || iRsvpd;
+  const canSeeRsvps = iOwn;
 
   useEffect(() => {
     if (!supabase) {
@@ -52,7 +56,7 @@ export default function EventDetailsPage() {
     const { data: e, error: eErr } = await supabase
       .from('events')
       .select(
-        'id, owner_id, title, description, date_iso, start_time, end_time, city, location_name, map_url, capacity, created_at, image_url'
+        'id, owner_id, title, description, date_iso, start_time, end_time, city, location_name, map_url, capacity, cancelled_at, created_at, image_url'
       )
       .eq('id', eventId)
       .single();
@@ -62,7 +66,7 @@ export default function EventDetailsPage() {
       const { data: fallbackEvent, error: fallbackErr } = await supabase
         .from('events')
         .select(
-          'id, owner_id, title, description, date_iso, start_time, end_time, city, location_name, map_url, capacity, created_at'
+          'id, owner_id, title, description, date_iso, start_time, end_time, city, location_name, map_url, capacity, cancelled_at, created_at'
         )
         .eq('id', eventId)
         .single();
@@ -151,6 +155,7 @@ export default function EventDetailsPage() {
   }
 
   async function handleRsvp() {
+    if (busy) return;
     if (!me) {
       setFlash('Please sign in to RSVP.');
       clearFlashSoon();
@@ -169,11 +174,7 @@ export default function EventDetailsPage() {
 
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from('rsvps')
-        .insert({ event_id: id, user_id: me.id });
-
-      if (error && error.code !== '23505') throw error;
+      await setEventRsvp(supabase, id, me.id, true);
 
       await refreshAll(id);
       setFlash('RSVP’d!');
@@ -186,6 +187,7 @@ export default function EventDetailsPage() {
   }
 
   async function handleUnrsvp() {
+    if (busy) return;
     if (!me) {
       setFlash('Please sign in first.');
       clearFlashSoon();
@@ -199,12 +201,7 @@ export default function EventDetailsPage() {
 
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from('rsvps')
-        .delete()
-        .match({ event_id: id, user_id: me.id });
-
-      if (error) throw error;
+      await setEventRsvp(supabase, id, me.id, false);
 
       await refreshAll(id);
       setFlash('RSVP removed.');
@@ -216,12 +213,22 @@ export default function EventDetailsPage() {
     }
   }
 
+  async function cancelEvent() {
+    if(busy) return;
+    setBusy(true);
+    try {
+      const response=await fetch('/api/events/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:id})});
+      const result=await response.json();if(!response.ok) throw new Error(result.error || 'Could not cancel event.');
+      setConfirmCancel(false);await refreshAll(id);setFlash('Event cancelled. Attendees have been notified.');
+      window.dispatchEvent(new Event('notifications-changed'));
+    } catch(error) {setFlash(error.message);} finally {setBusy(false);}
+  }
   function clearFlashSoon() {
     setTimeout(() => setFlash(null), 2000);
   }
 
   return (
-    <div className="py-6">
+    <div className="mx-auto w-full max-w-2xl px-4 py-5 pb-28">
       {loading ? (
         <div className="animate-pulse space-y-3">
           <div className="h-56 rounded-2xl bg-gray-200" />
@@ -236,86 +243,41 @@ export default function EventDetailsPage() {
         <div className="rounded-md border px-3 py-2">Event not found.</div>
       ) : (
         <>
-          {/* Hero / image */}
-          <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--paper)]">
-            <div
-              className="h-56 w-full bg-cover bg-center"
-              style={
-                ev.image_url
-                  ? { backgroundImage: `url(${ev.image_url})` }
-                  : { backgroundColor: 'var(--sand, #E8D8C3)' }
-              }
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-            <div className="absolute inset-0 p-4 flex flex-col justify-between">
-              <div className="flex items-start justify-between gap-3">
-                <div className="px-2 py-1 text-[11px] rounded-full bg-white border border-[var(--border)] text-[var(--ink)] shadow-sm">
-                  {iOwn ? 'Hosted by You' : iRsvpd ? 'Going' : 'Event'}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {owner && (
-                    <div className="flex items-center gap-2 rounded-full bg-white/90 pl-1 pr-3 py-1 shadow-sm">
-                      <Avatar profile={owner} size="sm" />
-                      <div className="text-xs font-medium text-[var(--ink)]">
-                        {owner.full_name || 'Host'}
-                      </div>
-                    </div>
-                  )}
-                </div>
+          <Link href="/mine" className="mb-4 inline-flex text-sm text-gray-600 underline underline-offset-4">Back to My Events</Link>
+          <header className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--paper)] shadow-sm">
+            {ev.image_url && <div className="h-48 bg-cover bg-center sm:h-64" style={{ backgroundImage: `url(${ev.image_url})` }} />}
+            <div className="p-5 sm:p-6">
+              <div className="mb-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-gray-800">{ev.cancelled_at ? 'Cancelled' : iOwn ? 'You’re hosting' : iRsvpd ? 'You’re going' : 'Playdate'}</span>
+                {!ev.cancelled_at && ev.date_iso < localDateIso() && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">Archived</span>}
               </div>
-
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <h1 className="text-2xl font-semibold text-white drop-shadow-md">
-                    {ev.title}
-                  </h1>
-                  <div className="mt-1 text-sm text-white/90">
-                    {formatDate(ev.date_iso)} · {formatTime12(ev.start_time)}
-                    {ev.end_time ? `–${formatTime12(ev.end_time)}` : ''}
-                  </div>
-                </div>
-
-                <div className="bg-white text-[var(--ink)] text-xs font-semibold rounded px-3 py-2 text-center leading-tight shadow">
-                  <div>{formatMonth(ev.date_iso)}</div>
-                  <div>{formatDay(ev.date_iso)}</div>
+              <h1 className="break-words text-2xl font-semibold leading-tight text-[var(--ink)] sm:text-3xl">{ev.title}</h1>
+              <div className="mt-5 space-y-3 text-sm">
+                <div><p className="font-medium text-gray-900">{formatDate(ev.date_iso)}</p><p className="mt-1 text-gray-600">{formatTime12(ev.start_time)}{ev.end_time ? ` – ${formatTime12(ev.end_time)}` : ''}</p></div>
+                <div><p className="font-medium text-gray-900">{ev.location_name || 'Location TBD'}</p>{ev.city && <p className="mt-1 text-gray-600">{ev.city}</p>}
+                  {ev.map_url && <a href={ev.map_url} target="_blank" rel="noreferrer" className="mt-2 inline-block underline underline-offset-4">View map</a>}
                 </div>
               </div>
             </div>
-          </div>
+          </header>
 
+          {ev.cancelled_at && <p role="status" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">This event has been cancelled by the host. The original details and attendee history are preserved.</p>}
           {/* Meta + actions */}
-          <div className="mt-4 card p-4">
-            <div className="flex items-start justify-between gap-4">
+          <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--paper)] p-5 shadow-sm">
+            <div className="space-y-5">
               <div className="min-w-0">
-                <div className="text-sm text-gray-700">
-                  {ev.location_name || 'Location TBD'}
-                  {ev.city ? `, ${ev.city}` : ''}
-                </div>
-
-                {ev.map_url ? (
-                  <div className="mt-1">
-                    <a
-                      href={ev.map_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm underline"
-                    >
-                      Open map
-                    </a>
-                  </div>
-                ) : null}
-
                 {ev.description ? (
-                  <p className="mt-3 text-gray-800 whitespace-pre-wrap">
+                  <><h2 className="mb-2 text-base font-semibold">About this event</h2><p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap break-words">
                     {ev.description}
-                  </p>
+                  </p></>
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                {iOwn && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-4">
+                {iOwn && !ev.cancelled_at && ev.date_iso >= localDateIso() && <Link href={`/events/${ev.id}/invite`} className="btn btn-primary">Invite a parent</Link>}
+
+                {iOwn && <Link href={`/new?clone=${ev.id}`} className="btn btn-ghost">Clone event</Link>}
+                {iOwn && !ev.cancelled_at && (
                   <Link
                     href={`/events/${ev.id}/edit`}
                     className="btn btn-ghost"
@@ -324,7 +286,8 @@ export default function EventDetailsPage() {
                   </Link>
                 )}
 
-                {!iOwn && me && (
+                {iOwn && !ev.cancelled_at && ev.date_iso >= localDateIso() && <button type="button" disabled={busy} onClick={() => setConfirmCancel(true)} className="btn btn-ghost text-red-700">Cancel event</button>}
+                {!iOwn && !ev.cancelled_at && me && ev.date_iso >= localDateIso() && (
                   iRsvpd ? (
                     <button
                       onClick={handleUnrsvp}
@@ -347,6 +310,10 @@ export default function EventDetailsPage() {
             </div>
           </div>
 
+          {confirmCancel && <section role="alertdialog" aria-labelledby="cancel-event-title" className="mt-4 rounded-xl border border-red-200 bg-white p-4">
+            <h2 id="cancel-event-title" className="font-semibold">Cancel this event?</h2><p className="mt-2 text-sm">This cancels only this date. Everyone who RSVP’d will receive an in-app notification. New RSVPs will be blocked. To repost later, clone the event.</p>
+            <div className="mt-3 flex gap-2"><button disabled={busy} onClick={cancelEvent} className="rounded-lg bg-red-700 px-4 py-2 text-white">{busy ? 'Cancelling…' : 'Yes, cancel event'}</button><button disabled={busy} onClick={() => setConfirmCancel(false)} className="rounded-lg border px-4 py-2">Keep event</button></div>
+          </section>}
           {flash ? (
             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
               {flash}
@@ -354,9 +321,9 @@ export default function EventDetailsPage() {
           ) : null}
 
           {/* Host */}
-          <section className="mt-8">
+          <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--paper)] p-5 shadow-sm">
             <h2 className="text-base font-semibold text-[var(--ink)]">Hosted by</h2>
-            <div className="mt-3 card p-3">
+            <div className="mt-3">
               <div className="flex items-center gap-3">
                 <Avatar profile={owner} size="md" />
                 <div className="min-w-0">
@@ -370,20 +337,20 @@ export default function EventDetailsPage() {
           </section>
 
           {/* RSVP block */}
-          <section className="mt-8">
+          <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--paper)] p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-[var(--ink)]">
                 RSVPs{' '}
                 <span className="text-gray-500 font-normal">
-                  ({rsvps.length}{ev.capacity ? ` / ${ev.capacity}` : ''})
+                  {iOwn ? `(${rsvps.length}${ev.capacity ? ` / ${ev.capacity}` : ''})` : ''}
                 </span>
               </h2>
             </div>
 
             {!canSeeRsvps ? (
-              <p className="mt-2 text-gray-600">RSVP to see the attendee list.</p>
+              <p className="mt-3 text-sm text-gray-500">Only the host can view the attendee list.</p>
             ) : rsvps.length === 0 ? (
-              <p className="mt-2 text-gray-600">No one has RSVP’d yet.</p>
+              <p className="mt-3 text-sm text-gray-500">No one has RSVP’d yet.</p>
             ) : (
               <ul className="mt-3 grid gap-2">
                 {rsvps.map((r) => (
@@ -411,28 +378,10 @@ export default function EventDetailsPage() {
 }
 
 function Avatar({ profile, size = 'sm' }) {
-  const sizes = {
-    sm: 'w-9 h-9 text-xs',
-    md: 'w-11 h-11 text-sm',
-  };
-
-  return (
-    <div className={`${sizes[size]} rounded-full overflow-hidden border border-[var(--border)] bg-gray-200 flex items-center justify-center shrink-0`}>
-      {profile?.avatar_url ? (
-        <img
-          src={profile.avatar_url}
-          alt=""
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="font-medium text-gray-700">
-          {profile?.initials || '?'}
-        </span>
-      )}
-    </div>
-  );
+  return <ProfileAvatar name={profile?.full_name || profile?.initials || ''}
+    src={profile?.avatar_url || null} size="sm"
+    className={size === 'md' ? 'h-11 w-11 text-sm' : ''} />;
 }
-
 function getInitials(name) {
   if (!name || typeof name !== 'string') return '?';
 
@@ -445,7 +394,7 @@ function getInitials(name) {
 
 function formatDate(d) {
   try {
-    return new Date(d).toLocaleDateString();
+    return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   } catch {
     return d;
   }
@@ -453,7 +402,7 @@ function formatDate(d) {
 
 function formatMonth(d) {
   try {
-    return String(new Date(d).getMonth() + 1).padStart(2, '0');
+    return String(new Date(d + 'T12:00:00').getMonth() + 1).padStart(2, '0');
   } catch {
     return '--';
   }
@@ -461,7 +410,7 @@ function formatMonth(d) {
 
 function formatDay(d) {
   try {
-    return String(new Date(d).getDate()).padStart(2, '0');
+    return String(new Date(d + 'T12:00:00').getDate()).padStart(2, '0');
   } catch {
     return '--';
   }

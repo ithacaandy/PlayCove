@@ -1,4 +1,5 @@
 import Header from "../../../components/Header";
+import { ACTIVE_GROUP_STATUSES, canManageGroup, readGroupAccess } from "../../../../lib/group-membership";
 import { createServerSupabase } from "../../../../lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -8,26 +9,20 @@ export default async function MembersPage({ params }){
   const { data: { user } } = await s.auth.getUser();
   if(!user) redirect(`/auth?next=/groups/${groupId}/members`);
 
-  const { data: me } = await s
-    .from("group_members")
-    .select("role,status")
-    .eq("group_id", groupId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if(!(me && me.status === "active" && (me.role === "owner" || me.role === "admin"))) {
-    redirect(`/groups`);
-  }
-
-  const { data: pend } = await s
+  const { group, membership } = await readGroupAccess(s, groupId, user.id);
+  if (!canManageGroup(group, user.id, membership)) redirect('/groups');
+  const isOwner = group.owner_id === user.id;
+  const { data: pend, error: pendingError } = await s
     .from("group_members")
     .select("user_id, role, status")
     .eq("group_id", groupId).eq("status", "pending");
 
-  const { data: actv } = await s
+  const { data: actv, error: activeError } = await s
     .from("group_members")
     .select("user_id, role, status")
-    .eq("group_id", groupId).eq("status", "active");
+    .eq("group_id", groupId).in("status", ACTIVE_GROUP_STATUSES);
+
+  if (pendingError || activeError) throw new Error("Could not load memberships. Please reload and try again.");
 
   return (
     <main>
@@ -38,7 +33,7 @@ export default async function MembersPage({ params }){
           <h1 className="text-xl font-semibold">Manage Members</h1>
           <div className="flex gap-2">
             <a className="btn" href={`/groups/${groupId}/invite`}>Invite</a>
-            <a className="btn" href={`/?group=${groupId}`}>Open group</a>
+            <a className="btn" href={`/groups/${groupId}`}>Open group</a>
           </div>
         </div>
 
@@ -74,14 +69,14 @@ export default async function MembersPage({ params }){
                   <div className="font-medium">{m.user_id.slice(0,8)}…</div>
                   <div className="text-xs text-gray-500">role: {m.role}</div>
                 </div>
-                <div className="flex gap-2">
+                {isOwner && m.user_id !== group.owner_id && <div className="flex gap-2">
                   <form method="post" action={`/api/groups/members/role?group=${groupId}&user=${m.user_id}&role=member`}>
                     <button className="btn">Member</button>
                   </form>
                   <form method="post" action={`/api/groups/members/role?group=${groupId}&user=${m.user_id}&role=admin`}>
                     <button className="btn">Admin</button>
                   </form>
-                </div>
+                </div>}
               </div>
             ))}
             {(actv||[]).length===0 && <div className="text-sm text-gray-600">No active members yet.</div>}
