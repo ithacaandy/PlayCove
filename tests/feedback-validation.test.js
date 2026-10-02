@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFeedback, feedbackPagePath } from '../lib/feedback-validation.js';
+import { parseFeedback, feedbackPagePath, feedbackReturnPath } from '../lib/feedback-validation.js';
 import { safeReturnPath } from '../lib/auth-navigation.js';
 
 test('feedback strips query tokens and fragments and rejects external destinations', () => {
@@ -16,4 +16,10 @@ test('recovery callback can reach password form while other auth returns stay bl
   assert.equal(safeReturnPath('/auth'), '/');
   assert.equal(safeReturnPath('/auth/callback'), '/');
   assert.equal(safeReturnPath('//evil.example/auth/update-password'), '/');
+});
+
+test('feedback returns home when the original page needs an invitation token', () => {
+  assert.equal(feedbackReturnPath('/invite?token=secret'), '/');
+  assert.equal(feedbackReturnPath('/event-invite'), '/');
+  assert.equal(feedbackReturnPath('/mine'), '/mine');
 });

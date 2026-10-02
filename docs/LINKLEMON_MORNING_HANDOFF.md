@@ -8,7 +8,7 @@ Prepared October 1, 2026 (America/New_York). This checkpoint prepares a limited 
 - Installed and rollback-tested the feedback database policies. Approved testers can submit and read their own reports; other testers cannot read them or impersonate another reporter. Anonymous and unapproved accounts cannot submit.
 - Fixed password recovery navigation: the reset email returns through the existing code-exchange callback, and middleware lets the recovery session reach the password form. No password was changed and no recovery email was sent during this work. A real recovery-email test remains for tomorrow.
 - Fixed the daily check-in function's mutable search path. Its original behavior passed a rollback-only execution test; existing event timestamps and check-in records were not changed by the test.
-- Regression suite: 35 passing tests. Production build succeeds. Applied remote migrations: linklemon_beta_feedback and pin_daily_checkin_search_path. SQL in supabase/repairs records applied changes and must not be blindly replayed.
+- Regression suite: 36 passing tests. Production build succeeds. Applied remote migrations: linklemon_beta_feedback and pin_daily_checkin_search_path. SQL in supabase/repairs records applied changes and must not be blindly replayed.
 
 Feedback review currently happens in the Supabase dashboard using an authorized administrator connection. There is no new in-app administrator inbox or outbound notification yet. Check the feedback table during beta and agree who will own follow-up.
 
@@ -70,3 +70,7 @@ No tester identities were invented and no invitation messages were sent.
 - Leaked-password protection is still disabled. Existing callable SECURITY DEFINER warnings remain; beta checks deny unauthorized access, but relocating helpers and changing privilege grants require a separate compatibility review. The two private-table no-policy notices are intentional defense in depth.
 
 Security references: [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), [callable privileged functions](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+
+## Hosted verification checkpoint
+
+The overnight preview deployment HDUttggpb8oeAoTNRsjqb6Wqk71X (commit 0a89092) reached Ready. A browser submission displayed the saved confirmation with no browser warnings/errors; the database confirmed the expected reporter and page_path=/invite, without the dummy invitation query token. One clearly labeled automated smoke-test report remains in the queue. After reports from invitation pages, the return link goes home because stripped tokens cannot reopen the invitation. A final follow-up deployment includes that return-link adjustment and this checkpoint.

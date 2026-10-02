@@ -2,7 +2,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { feedbackPagePath } from '../../lib/feedback-validation';
+import { feedbackPagePath, feedbackReturnPath } from '../../lib/feedback-validation';
 
 export default function FeedbackPage() {
   return <Suspense fallback={<p className="p-6">Loading…</p>}><FeedbackForm /></Suspense>;
@@ -33,7 +33,7 @@ function FeedbackForm() {
   return <main className="mx-auto max-w-md space-y-5 px-5 pb-28 pt-6">
     <h1 className="text-2xl font-bold">Report a problem</h1>
     {saved ? <div className="space-y-4"><p role="status" className="rounded-xl bg-green-50 p-4 text-green-900">Thanks! Your feedback has been saved for review.</p>
-      <Link href={page === '/feedback' ? '/' : page} className="block rounded-xl bg-yellow-300 px-4 py-3 text-center font-semibold">Return to the app</Link></div>
+      <Link href={feedbackReturnPath(page)} className="block rounded-xl bg-yellow-300 px-4 py-3 text-center font-semibold">Return to the app</Link></div>
       : <form onSubmit={submit} className="space-y-5">
         <p className="text-gray-600">Tell us what happened, what you expected, and how we can reproduce it. Ideas are welcome too.</p>
         <fieldset disabled={busy} className="space-y-4">
