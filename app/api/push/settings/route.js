@@ -6,7 +6,7 @@ export async function GET(){
  try {const s=createServerSupabase();const {data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
  const {data,error}=await s.from('notification_preferences').select('enabled,paused_until').eq('user_id',user.id).maybeSingle();if(error)throw error;
  const availability=await s.rpc('push_available');if(availability.error)throw availability.error;
- return NextResponse.json({settings:data || {enabled:false,paused_until:null},deliveryReady:pushReady() && availability.data===true},{headers});
+ return NextResponse.json({userId:user.id,betaWelcome:process.env.LINKLEMON_BETA_GATE_ENABLED==='true',settings:data || {enabled:false,paused_until:null},deliveryReady:pushReady() && availability.data===true},{headers});
  }catch{return NextResponse.json({error:'Notification settings could not load.'},{status:503,headers});}
 }
 export async function POST(req){

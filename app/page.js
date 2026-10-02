@@ -9,6 +9,7 @@ import { getSupabaseClient } from '../lib/supabaseClient';
 import EventCard from './components/EventCard';
 import OutingList from './components/OutingList';
 import Avatar from './components/Avatar';
+import BetaWelcome from './components/BetaWelcome';
 
 const supabase = getSupabaseClient();
 
@@ -177,6 +178,7 @@ export default function HomePage() {
           <Link href="/connections" className="rounded-2xl border bg-white p-4"><span className="block font-semibold">Connections</span><span className="mt-1 block text-sm text-gray-600">Your circle and requests</span></Link>
         </nav>
         <Link href="/notification-settings" className="mb-5 block text-sm text-gray-600 underline">Availability and notification settings</Link>
+        {me && <BetaWelcome userId={me.id} />}
         {me && <OutingList />}
         <h2 className="mb-3 font-semibold">Your upcoming events</h2>
         {err && (
