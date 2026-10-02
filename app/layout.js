@@ -4,6 +4,8 @@ import NavFrame from './components/NavFrame';
 
 export const metadata = {
   title: 'LinkLemon',
+  appleWebApp: {capable:true,title:'LinkLemon',statusBarStyle:'default'},
+  icons: {apple:'/brand/icons/check-in.png'},
   description: 'Connect with nearby families through groups and playdate events.',
 };
 

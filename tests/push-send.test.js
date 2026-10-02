@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {sendClaimedJobs} from '../lib/push-send.js';
+const base={id:'fixture',lease:'fixture',subscription:{endpoint:'https://fcm.googleapis.com/test',keys:{p256dh:Buffer.alloc(65,4).toString('base64url'),auth:Buffer.alloc(16,1).toString('base64url')}},expires_at:'2026-10-02T18:10:00Z',tag:'10000000-0000-4000-8000-000000000001',url:'/notifications',body:'New update',urgent:true};
+async function scenario({eligible=true,error,expires=base.expires_at}={}){const outcomes=[],sends=[];await sendClaimedJobs({jobs:[{...base,expires_at:expires}],now:()=>new Date('2026-10-02T18:00:00Z').getTime(),vapid:{},call:async(action,payload)=>action==='eligible'?eligible:outcomes.push(payload.outcome),send:async(...args)=>{sends.push(args);if(error)throw error;}});return {outcomes,sends};}
+test('a pause/off/sign-out check immediately before send prevents delivery',async()=>{const r=await scenario({eligible:false});assert.equal(r.sends.length,0);assert.deepEqual(r.outcomes,['skipped']);});
+test('expired outings cannot alert and transient provider failures remain retryable',async()=>{assert.deepEqual((await scenario({expires:'2026-10-02T17:59:00Z'})).outcomes,['skipped']);assert.deepEqual((await scenario({error:{statusCode:503}})).outcomes,['retry']);});
+test('revoked provider subscription is removed rather than retried',async()=>{for(const statusCode of [404,410])assert.deepEqual((await scenario({error:{statusCode}})).outcomes,['expired']);});
+test('accepted alerts use a stable tag and a short provider lifetime',async()=>{const r=await scenario();assert.deepEqual(r.outcomes,['sent']);const payload=JSON.parse(r.sends[0][1]);assert.equal(payload.tag,base.tag);assert.equal(r.sends[0][2].TTL,60);assert.equal(r.sends[0][2].topic,base.tag.replaceAll('-',''));});
