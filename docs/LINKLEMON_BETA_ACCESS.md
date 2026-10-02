@@ -1,6 +1,6 @@
 # Beta access controls: review and activation
 
-Prepared October 1, 2026. Local application build and 32 regression tests pass. The database controls were approved, passed rollback-only tests, and were applied as remote migration linklemon_beta_access. A second rollback-only test verified the installed controls. The live beta-enabled switch remains false; the application gate is not enabled.
+Prepared October 1, 2026. Local application build and 32 regression tests pass. The database controls were approved, passed rollback-only tests, and were applied as remote migration linklemon_beta_access. A second rollback-only test verified the installed controls. The live beta-enabled switch is true. LINKLEMON_BETA_GATE_ENABLED=true is scoped to the Vercel release/linklemon-preview branch.
 
 ## Installed database change
 
@@ -44,4 +44,4 @@ Adding a tester means inserting their normalized email into the private beta_tes
 
 ## Approval status
 
-The owner explicitly approved rollback testing and application of this implementation on October 1, 2026. Both completed successfully. Activation and deployment remain separate next steps. Security advisors reported two informational no-policy notices for the deliberately inaccessible private tables; no new security warnings were introduced. Existing privileged-function, daily-check-in search-path and password-protection warnings remain under review.
+The owner explicitly approved rollback testing and application of this implementation on October 1, 2026. Both completed successfully. Activation and preview deployment completed on October 1, 2026. Preview build 79qvdQ3uo5LuoMpiNJXGqiQfLqZf (commit 0d64f22) was Ready in 25 seconds. The hosted account page loaded for Andy Noyes with no browser errors. Both approved accounts passed database authorization checks; unapproved-account browser sign-in is not yet independently verified. Vercel preview protection remains on, and the custom domain is unchanged. Security advisors reported two informational no-policy notices for the deliberately inaccessible private tables; no new security warnings were introduced. Existing privileged-function, daily-check-in search-path and password-protection warnings remain under review.
