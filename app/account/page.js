@@ -211,7 +211,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#E8E8E8] px-4 py-5">
-        <div className="mx-auto w-full max-w-md pb-24">
+        <div className="mx-auto w-full max-w-md">
           <div className="space-y-4">
             <div className="h-28 animate-pulse rounded-2xl bg-white/50" />
             <div className="h-40 animate-pulse rounded-2xl bg-white/50" />
@@ -224,7 +224,7 @@ export default function AccountPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#E8E8E8] px-4 py-5">
-        <div className="mx-auto w-full max-w-md pb-24">
+        <div className="mx-auto w-full max-w-md">
           <div className="rounded-2xl border border-black/20 bg-white/60 px-4 py-4 text-sm text-gray-900">
             You’re not signed in. <Link href="/auth" className="underline">Go to sign in</Link>.
           </div>
@@ -235,7 +235,7 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-[#E8E8E8] px-4 py-5">
-      <div className="mx-auto w-full max-w-md pb-24">
+      <div className="mx-auto w-full max-w-md">
         <div className="mb-10 flex items-center gap-5 pt-8">
           <button
             type="button"

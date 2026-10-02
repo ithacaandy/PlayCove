@@ -131,7 +131,7 @@ export default function EditGroupPage() {
 
   if (!group) {
     return (
-      <div className="py-6">
+      <div className="mx-auto w-full max-w-md px-4 py-6">
         <h1 className="text-xl font-semibold">Group not found</h1>
         <Link href="/groups" className="mt-4 inline-flex items-center rounded-md border px-4 py-2 text-sm hover:bg-gray-50">Back to My Groups</Link>
       </div>
@@ -140,7 +140,7 @@ export default function EditGroupPage() {
 
   if (!isOwner) {
     return (
-      <div className="py-6">
+      <div className="mx-auto w-full max-w-md px-4 py-6">
         <h1 className="text-xl font-semibold">Edit Group</h1>
         <p className="mt-2 text-gray-600">You’re not the owner of this group.</p>
         <div className="mt-4 flex items-center gap-2">
@@ -152,8 +152,8 @@ export default function EditGroupPage() {
   }
 
   return (
-    <div className="py-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-md px-4 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Edit Group</h1>
         <div className="flex items-center gap-2">
           <Link href={`/groups/${id}`} className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">Back</Link>
@@ -227,7 +227,7 @@ export default function EditGroupPage() {
 
 function Skeleton() {
   return (
-    <div className="py-6 animate-pulse">
+    <div className="mx-auto w-full max-w-md px-4 py-6 animate-pulse">
       <div className="h-5 w-40 rounded bg-gray-200" />
       <div className="mt-4 h-16 w-full rounded bg-gray-200" />
       <div className="mt-3 h-16 w-full rounded bg-gray-200" />

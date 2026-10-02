@@ -157,7 +157,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--cream)] px-4 py-5">
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full max-w-md">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/account" aria-label="Go to account" className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">

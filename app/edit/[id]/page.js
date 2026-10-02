@@ -53,10 +53,10 @@ export default function EditEventPage(){
   };
 
   if (loading) return null;
-  if (!event) return <main className="container py-6">{msg}</main>;
+  if (!event) return <main className="mx-auto w-full max-w-2xl px-4 py-6">{msg}</main>;
 
   return (
-    <main className="container py-6 max-w-2xl">
+    <main className="mx-auto w-full max-w-2xl px-4 py-6">
       <h1 className="text-lg font-semibold mb-4">Edit Post</h1>
       <form onSubmit={save} className="grid gap-3">
         <input name="title" defaultValue={event.title} className="input" placeholder="Title" required />

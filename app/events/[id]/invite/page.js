@@ -19,7 +19,7 @@ export default function InvitePage({ params }) {
     } catch (error) { setError(error.message || 'Could not generate an invitation.'); }
     finally { setBusy(false); }
   }
-  return <main className="mx-auto max-w-md px-4 py-6 pb-24 space-y-4">
+  return <main className="mx-auto max-w-md px-4 py-6 space-y-4">
     <h1 className="text-lg font-semibold">Invite to Event</h1>
     <form onSubmit={generate} className="grid gap-3">
       <label className="text-sm">Parent’s email<input type="email" required maxLength={254} value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full rounded border p-3" /></label>

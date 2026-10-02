@@ -124,7 +124,7 @@ export default function EditEventPage() {
 
   if (!event) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6 pb-24">
+      <div className="mx-auto max-w-md px-4 py-6">
         <h1 className="text-xl font-semibold text-[var(--ink)]">Event unavailable</h1>
         {status?.msg && <p role="alert" className="mt-3 text-red-700">{status.msg}</p>}
         <Link href="/mine" className="btn btn-ghost mt-4 inline-flex">
@@ -136,7 +136,7 @@ export default function EditEventPage() {
 
   if (!isOwner) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6 pb-24">
+      <div className="mx-auto max-w-md px-4 py-6">
         <h1 className="text-xl font-semibold text-[var(--ink)]">Edit Event</h1>
         <p className="mt-2 text-gray-600">You’re not the owner of this event.</p>
         <div className="mt-4">
@@ -149,7 +149,7 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6 pb-24">
+    <div className="mx-auto max-w-md px-4 py-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-[var(--ink)]">Edit Event</h1>
         <Link href={`/events/${id}`} className="btn btn-ghost">

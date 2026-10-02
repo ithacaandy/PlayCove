@@ -118,7 +118,7 @@ export default function NewEventPage() {
   if (loading) return <p role="status" className="p-4">Loading event form…</p>;
   if (!isAuthed) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6 pb-24">
+      <div className="mx-auto max-w-md px-4 py-6">
         <h1 className="text-xl font-semibold">Create a New Event</h1>
         <p className="mt-3 text-gray-600">You’re not signed in.</p>
         <div className="mt-6">
@@ -129,7 +129,7 @@ export default function NewEventPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6 pb-24">
+    <div className="mx-auto max-w-md px-4 py-6">
       <h1 className="text-xl font-semibold">Create a New Event</h1>
 
       {status?.msg ? (

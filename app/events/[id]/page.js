@@ -228,7 +228,7 @@ export default function EventDetailsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-5 pb-28">
+    <div className="mx-auto w-full max-w-2xl px-5 py-5 sm:px-6">
       {loading ? (
         <div className="animate-pulse space-y-3">
           <div className="h-56 rounded-2xl bg-gray-200" />
@@ -254,8 +254,8 @@ export default function EventDetailsPage() {
               <h1 className="break-words text-2xl font-semibold leading-tight text-[var(--ink)] sm:text-3xl">{ev.title}</h1>
               <div className="mt-5 space-y-3 text-sm">
                 <div><p className="font-medium text-gray-900">{formatDate(ev.date_iso)}</p><p className="mt-1 text-gray-600">{formatTime12(ev.start_time)}{ev.end_time ? ` – ${formatTime12(ev.end_time)}` : ''}</p></div>
-                <div><p className="font-medium text-gray-900">{ev.location_name || 'Location TBD'}</p>{ev.city && <p className="mt-1 text-gray-600">{ev.city}</p>}
-                  {ev.map_url && <a href={ev.map_url} target="_blank" rel="noreferrer" className="mt-2 inline-block underline underline-offset-4">View map</a>}
+                <div><p className="break-words font-medium text-gray-900">{ev.location_name || 'Location TBD'}</p>{ev.city && <p className="mt-1 text-gray-600">{ev.city}</p>}
+                  {ev.map_url && <a href={ev.map_url} target="_blank" rel="noreferrer" className="mt-2 inline-block break-words underline underline-offset-4">View map</a>}
                 </div>
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function EventDetailsPage() {
 
           {confirmCancel && <section role="alertdialog" aria-labelledby="cancel-event-title" className="mt-4 rounded-xl border border-red-200 bg-white p-4">
             <h2 id="cancel-event-title" className="font-semibold">Cancel this event?</h2><p className="mt-2 text-sm">This cancels only this date. Everyone who RSVP’d will receive an in-app notification. New RSVPs will be blocked. To repost later, clone the event.</p>
-            <div className="mt-3 flex gap-2"><button disabled={busy} onClick={cancelEvent} className="rounded-lg bg-red-700 px-4 py-2 text-white">{busy ? 'Cancelling…' : 'Yes, cancel event'}</button><button disabled={busy} onClick={() => setConfirmCancel(false)} className="rounded-lg border px-4 py-2">Keep event</button></div>
+            <div className="mt-3 flex flex-wrap gap-2"><button disabled={busy} onClick={cancelEvent} className="rounded-lg bg-red-700 px-4 py-2 text-white">{busy ? 'Cancelling…' : 'Yes, cancel event'}</button><button disabled={busy} onClick={() => setConfirmCancel(false)} className="rounded-lg border px-4 py-2">Keep event</button></div>
           </section>}
           {flash ? (
             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">

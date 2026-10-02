@@ -84,10 +84,10 @@ export default function GroupDetailsPage() {
   }
 
   if (loading) return <p role="status" className="p-4">Loading group…</p>;
-  if (err) return <div className="p-4"><p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{err}</p><Link href="/groups" className="mt-4 inline-block underline">Back to My Groups</Link></div>;
+  if (err) return <div className="mx-auto max-w-md px-4 py-6"><p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{err}</p><Link href="/groups" className="mt-4 inline-block underline">Back to My Groups</Link></div>;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6 pb-24">
+    <div className="mx-auto max-w-md px-4 py-6">
       <h1 className="text-xl font-semibold">{group.name}</h1>
       {group.description ? <p className="mt-2 whitespace-pre-wrap text-gray-700">{group.description}</p> : null}
       <p className="mt-2 text-sm text-gray-500">

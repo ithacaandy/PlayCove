@@ -1,4 +1,3 @@
-import Header from "../../../components/Header";
 import { ACTIVE_GROUP_STATUSES, canManageGroup, readGroupAccess } from "../../../../lib/group-membership";
 import { createServerSupabase } from "../../../../lib/supabase-server";
 import { redirect } from "next/navigation";
@@ -26,12 +25,10 @@ export default async function MembersPage({ params }){
 
   return (
     <main>
-      {/* @ts-expect-error Async Server Component */}
-      <Header />
-      <div className="container py-4 space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+        <div className="flex flex-wrap justify-between items-center gap-3">
           <h1 className="text-xl font-semibold">Manage Members</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <a className="btn" href={`/groups/${groupId}/invite`}>Invite</a>
             <a className="btn" href={`/groups/${groupId}`}>Open group</a>
           </div>
@@ -46,7 +43,7 @@ export default async function MembersPage({ params }){
                   <div className="font-medium">{p.user_id.slice(0,8)}…</div>
                   <div className="text-xs text-gray-500">status: {p.status}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <form method="post" action={`/api/groups/members/approve?group=${groupId}&user=${p.user_id}`}>
                     <button className="btn btn-primary">Approve</button>
                   </form>
@@ -69,7 +66,7 @@ export default async function MembersPage({ params }){
                   <div className="font-medium">{m.user_id.slice(0,8)}…</div>
                   <div className="text-xs text-gray-500">role: {m.role}</div>
                 </div>
-                {isOwner && m.user_id !== group.owner_id && <div className="flex gap-2">
+                {isOwner && m.user_id !== group.owner_id && <div className="flex flex-wrap gap-2">
                   <form method="post" action={`/api/groups/members/role?group=${groupId}&user=${m.user_id}&role=member`}>
                     <button className="btn">Member</button>
                   </form>

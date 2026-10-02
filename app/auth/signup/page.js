@@ -26,7 +26,7 @@ export default function SignupPage(){
   }
 
   return (
-    <>
+    <main className="mx-auto w-full max-w-md px-5 py-10">
       <div className="mb-6 flex items-center justify-center gap-2"><LemonMark className="h-9 w-9"/><span className="text-lg font-semibold">LinkLemon</span></div>
       <h1 className="text-center text-2xl font-semibold text-ink mb-6">Create account</h1>
       {status?.msg && (
@@ -48,6 +48,6 @@ export default function SignupPage(){
         <button className="btn btn-primary w-full mt-1">Sign up</button>
       </form>
       <p className="text-center text-sm mt-3">Already have an account? <Link href="/auth" className="underline">Sign in</Link></p>
-    </>
+    </main>
   );
 }

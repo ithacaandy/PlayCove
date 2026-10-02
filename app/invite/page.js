@@ -57,7 +57,7 @@ function Invitation() {
     } catch (error) { setError(error.message || 'Could not accept this invitation.'); }
     finally { setBusy(false); }
   }
-  return <main className="mx-auto max-w-md px-4 py-6 pb-24 space-y-4">
+  return <main className="mx-auto max-w-md px-4 py-6 space-y-4">
     <div className="flex items-center gap-3"><AccountAvatar /><h1 className="text-xl font-semibold">Group invitation</h1></div>
     <p className="text-sm">This invitation is for one email address. Use the account that received the link.</p>
     {!valid && <p role="alert">This invitation link is invalid.</p>}

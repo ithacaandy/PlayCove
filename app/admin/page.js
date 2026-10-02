@@ -1,4 +1,3 @@
-import Header from "../components/Header";
 import { createServerSupabase } from "../../lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -17,9 +16,7 @@ export default async function Admin() {
 
   return (
     <main>
-      {/* @ts-expect-error Async Server Component */}
-      <Header />
-      <div className="container py-4 space-y-4">
+      <div className="mx-auto max-w-2xl px-4 py-6 space-y-4">
         <h2 className="text-lg font-semibold">Moderation</h2>
         <div className="grid gap-3">
           {(flagged || []).map(e => (

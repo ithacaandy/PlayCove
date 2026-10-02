@@ -20,7 +20,7 @@ export default function ForgotPassword(){
   }
 
   return (
-    <>
+    <main className="mx-auto w-full max-w-md px-5 py-10">
       <h1 className="text-center text-2xl font-semibold text-ink mb-6">Reset password</h1>
       <form onSubmit={onSubmit} className="grid gap-3">
         <div>
@@ -30,6 +30,6 @@ export default function ForgotPassword(){
         <button className="btn btn-primary w-full mt-1">Send reset link</button>
       </form>
       {msg && <p className="text-sm text-stone mt-3 text-center">{msg}</p>}
-    </>
+    </main>
   );
 }

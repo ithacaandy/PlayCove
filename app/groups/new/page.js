@@ -67,7 +67,7 @@ export default function NewGroupPage() {
   if (loading) return <p role="status" className="p-4">Loading…</p>;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6 pb-24">
+    <div className="mx-auto max-w-md px-4 py-6">
       <h1 className="text-xl font-semibold">New Group</h1>
       {status?.msg ? (
         <p role={status.type === 'error' ? 'alert' : 'status'}

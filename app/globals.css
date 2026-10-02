@@ -153,3 +153,12 @@ body {
     padding: 8px 9px;
   }
 }
+/* Consistent page clearance without repeating bottom padding in every screen. */
+.app-frame { padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); }
+@layer components {
+ .input { @apply block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-3 text-base; }
+ .input:focus { outline: 2px solid var(--sunshine-600); outline-offset: 2px; }
+ .label { @apply mb-2 block text-sm font-medium; }
+}
+input, select, textarea { max-width: 100%; }
+h1, h2, h3 { overflow-wrap: anywhere; }

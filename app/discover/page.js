@@ -259,7 +259,7 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-[var(--cream)] px-4 py-5">
-      <div className="mx-auto w-full max-w-md pb-24">
+      <div className="mx-auto w-full max-w-md">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/account" aria-label="Go to account">

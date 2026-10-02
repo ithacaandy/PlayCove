@@ -21,7 +21,7 @@ export default function UpdatePasswordPage(){
   }
 
   return (
-    <>
+    <main className="mx-auto w-full max-w-md px-5 py-10">
       <h1 className="text-center text-2xl font-semibold text-ink mb-6">Set a new password</h1>
       {status?.msg && (
         <div className={`mb-3 rounded-md border px-3 py-2 text-sm ${
@@ -37,6 +37,6 @@ export default function UpdatePasswordPage(){
         </div>
         <button className="btn btn-primary w-full mt-1">Update password</button>
       </form>
-    </>
+    </main>
   );
 }

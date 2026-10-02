@@ -30,7 +30,7 @@ function FeedbackForm() {
     } catch (err) { setError(err.name === 'AbortError' ? 'Saving took too long. Please try again.' : err.message); }
     finally { clearTimeout(timer); setBusy(false); }
   }
-  return <main className="mx-auto max-w-md space-y-5 px-5 pb-28 pt-6">
+  return <main className="mx-auto max-w-md space-y-5 px-5 pt-6">
     <h1 className="text-2xl font-bold">Report a problem</h1>
     {saved ? <div className="space-y-4"><p role="status" className="rounded-xl bg-green-50 p-4 text-green-900">Thanks! Your feedback has been saved for review.</p>
       <Link href={feedbackReturnPath(page)} className="block rounded-xl bg-yellow-300 px-4 py-3 text-center font-semibold">Return to the app</Link></div>
