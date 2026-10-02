@@ -6,6 +6,7 @@ import NotificationProvider from './NotificationProvider';
 import NotificationSummary from './NotificationSummary';
 export default function NavFrame({ children }) {
   const path = usePathname();
+  if (path === '/beta-access') return <div className="min-h-screen">{children}</div>;
   const hideNav = path?.startsWith('/auth');
   return <NotificationProvider><div className="min-h-screen">
     {!hideNav && !['/', '/groups', '/mine', '/discover', '/account', '/notifications', '/invite', '/event-invite'].includes(path) && <div className="mx-auto flex max-w-md justify-start px-4 pt-3"><AccountAvatar /></div>}

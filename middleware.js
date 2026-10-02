@@ -1,6 +1,7 @@
 // middleware.js
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { checkBetaAccess } from './lib/beta-access';
 
 const PUBLIC_PATHS = new Set([
   '/auth',
@@ -9,6 +10,7 @@ const PUBLIC_PATHS = new Set([
   '/auth/reset',
   '/auth/signup',
   '/auth/callback',
+  '/beta-access',
   '/api/signout',
   '/invite',
   '/api/groups/accept',
@@ -40,19 +42,35 @@ export async function middleware(req) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-
-  const isPublic = [...PUBLIC_PATHS].some((p) => nextUrl.pathname.startsWith(p));
-  const isAsset = nextUrl.pathname.startsWith('/_next') || nextUrl.pathname.startsWith('/public');
-
-  if (!session && !isPublic && !isAsset) {
-    const url = new URL('/auth', nextUrl.origin);
-    url.searchParams.set('redirectedFrom', nextUrl.pathname || '/');
-    return NextResponse.redirect(url);
+  const { data: { user } } = await supabase.auth.getUser();
+  const withCookies = (response) => {
+    for (const cookie of res.cookies.getAll()) response.cookies.set(cookie);
+    return response;
+  };
+  if (user && process.env.LINKLEMON_BETA_GATE_ENABLED === 'true' && nextUrl.pathname !== '/beta-access') {
+    const access = await checkBetaAccess(supabase, true);
+    if (!access.allowed) {
+      if (nextUrl.pathname.startsWith('/api/')) {
+        return withCookies(NextResponse.json(
+          { error: access.unavailable ? 'Beta access could not be checked. Please try again.' : 'This account does not have beta access.' },
+          { status: access.unavailable ? 503 : 403 }
+        ));
+      }
+      return withCookies(NextResponse.redirect(new URL('/beta-access', nextUrl.origin)));
+    }
   }
 
-  if (session && nextUrl.pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL('/', nextUrl.origin));
+  const isPublic = PUBLIC_PATHS.has(nextUrl.pathname);
+  const isAsset = nextUrl.pathname.startsWith('/_next') || nextUrl.pathname.startsWith('/public');
+
+  if (!user && !isPublic && !isAsset) {
+    const url = new URL('/auth', nextUrl.origin);
+    url.searchParams.set('redirectedFrom', nextUrl.pathname || '/');
+    return withCookies(NextResponse.redirect(url));
+  }
+
+  if (user && nextUrl.pathname.startsWith('/auth')) {
+    return withCookies(NextResponse.redirect(new URL('/', nextUrl.origin)));
   }
 
   return res;
