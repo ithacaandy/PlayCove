@@ -3,14 +3,14 @@
 
 import { useEffect } from 'react';
 
-export default function GlobalError({ error, reset }) {
+export default function PageError({ error, reset }) {
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
-    <html>
-      <body>
+    <section aria-label="Page error">
+
         <div className="mx-auto max-w-screen-md px-3 py-10">
           <h1 className="text-xl font-semibold">Something went wrong</h1>
           <p className="mt-3 text-gray-600">An unexpected error occurred.</p>
@@ -21,7 +21,7 @@ export default function GlobalError({ error, reset }) {
             Try again
           </button>
         </div>
-      </body>
-    </html>
+
+    </section>
   );
 }

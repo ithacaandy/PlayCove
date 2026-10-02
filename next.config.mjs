@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     // Use ONLY remotePatterns (domains is deprecated)
     remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/a/**' },
       {
         protocol: 'https',
         hostname: '**.supabase.co',
