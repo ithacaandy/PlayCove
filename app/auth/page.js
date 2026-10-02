@@ -3,6 +3,7 @@
 
 import { Suspense, useState } from 'react';
 import Image from 'next/image';
+import LemonMark from '../components/LemonMark';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { safeReturnPath } from '../../lib/auth-navigation';
 import { getSupabaseClient } from '../../lib/supabaseClient';
@@ -81,10 +82,7 @@ function AuthForm() {
     <div className="min-h-screen bg-[var(--cream)] px-4 py-10">
       <div className="mx-auto w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <header className="mx-auto mb-6 flex w-full max-w-md items-center gap-2">
-          <div
-            style={{ backgroundColor: '#F6C74E' }}
-            className="h-8 w-8 rounded-full"
-          />
+          <LemonMark className="h-9 w-9" />
           <span style={{ color: '#1F2937' }} className="text-lg font-semibold">
             LinkLemon
           </span>

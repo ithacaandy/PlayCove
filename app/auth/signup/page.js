@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import LemonMark from '../../components/LemonMark';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../../../lib/supabaseClient';
 
@@ -26,6 +27,7 @@ export default function SignupPage(){
 
   return (
     <>
+      <div className="mb-6 flex items-center justify-center gap-2"><LemonMark className="h-9 w-9"/><span className="text-lg font-semibold">LinkLemon</span></div>
       <h1 className="text-center text-2xl font-semibold text-ink mb-6">Create account</h1>
       {status?.msg && (
         <div className={`mb-3 rounded-md border px-3 py-2 text-sm ${
