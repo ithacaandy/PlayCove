@@ -8,6 +8,7 @@ const PUBLIC_PATHS = new Set([
   '/auth/',
   '/auth/forgot',
   '/auth/reset',
+  '/auth/update-password',
   '/auth/signup',
   '/auth/callback',
   '/beta-access',
@@ -47,7 +48,8 @@ export async function middleware(req) {
     for (const cookie of res.cookies.getAll()) response.cookies.set(cookie);
     return response;
   };
-  if (user && process.env.LINKLEMON_BETA_GATE_ENABLED === 'true' && nextUrl.pathname !== '/beta-access') {
+  const isPasswordReset = ['/auth/reset', '/auth/update-password'].includes(nextUrl.pathname);
+  if (user && !isPasswordReset && process.env.LINKLEMON_BETA_GATE_ENABLED === 'true' && nextUrl.pathname !== '/beta-access') {
     const access = await checkBetaAccess(supabase, true);
     if (!access.allowed) {
       if (nextUrl.pathname.startsWith('/api/')) {
@@ -69,7 +71,7 @@ export async function middleware(req) {
     return withCookies(NextResponse.redirect(url));
   }
 
-  if (user && nextUrl.pathname.startsWith('/auth')) {
+  if (user && !isPasswordReset && nextUrl.pathname.startsWith('/auth')) {
     return withCookies(NextResponse.redirect(new URL('/', nextUrl.origin)));
   }
 

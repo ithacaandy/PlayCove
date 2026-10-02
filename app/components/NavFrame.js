@@ -1,5 +1,6 @@
 'use client';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import AccountAvatar from './AccountAvatar';
 import BottomNav from './BottomNav';
 import NotificationProvider from './NotificationProvider';
@@ -14,6 +15,7 @@ export default function NavFrame({ children }) {
     {path === '/groups' && <div className="px-4"><NotificationSummary type="group" /></div>}
     {path === '/mine' && <div className="px-4"><NotificationSummary type="event" /></div>}
     {children}
+    {!hideNav && path !== '/feedback' && <div className="mx-auto max-w-md px-5 pb-24 pt-4 text-center"><Link href={'/feedback?from=' + encodeURIComponent(path || '/')} className="text-sm text-gray-600 underline">Report a problem</Link></div>}
     {!hideNav && <BottomNav />}
   </div></NotificationProvider>;
 }
