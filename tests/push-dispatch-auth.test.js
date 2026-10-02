@@ -1,0 +1,5 @@
+
+import test from 'node:test';import assert from 'node:assert/strict';import {createHmac} from 'node:crypto';import {validBearer,validDispatchProof} from '../lib/push-dispatch-auth.js';
+const secret='test-only-secret-not-a-real-key';const nonce='10000000-0000-4000-8000-000000000001';const timestamp=1000000;const proof={nonce,timestamp,signature:createHmac('sha256',secret).update(timestamp+':'+nonce+':linklemon-push-dispatch-v1').digest('hex')};
+test('signed requests must be recent and unmodified',()=>{assert.equal(validDispatchProof(proof,secret,timestamp*1000),true);for(const modified of [{...proof,timestamp:timestamp-121},{...proof,nonce:'20000000-0000-4000-8000-000000000001'},{...proof,signature:'x'},{...proof,timestamp:'1000000'}])assert.equal(validDispatchProof(modified,secret,timestamp*1000),false);assert.equal(validDispatchProof(proof,'wrong',timestamp*1000),false);});
+test('malformed bearer headers never throw or authorize',()=>{assert.equal(validBearer('Bearer '+secret,secret),true);for(const header of [null,'wrong','Bearer '+secret+'x','Bearer '+('é'.repeat(secret.length))])assert.equal(validBearer(header,secret),false);});
