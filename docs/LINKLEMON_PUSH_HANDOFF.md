@@ -21,3 +21,11 @@ Node tests cover pause boundaries, provider endpoint/key validation and service-
 A provider-accepted alert can briefly arrive after a pause is changed; provider TTL is limited to 60 seconds to reduce this window. Fresh jobs always check the current pause before sending.
 
 The settings page keeps Enable disabled until the database dispatcher activation flag is on and required server configuration is present. This avoids asking for device permission before the delivery service is available.
+
+## Activated October 2, 2026
+
+Production deployment 8UKXGfz8zcUnm18CKjAdoRfSyJVG is Ready on getlinklemon.com, built in 44 seconds from commit 4faa0e2. All six production variables are configured; sensitive variables are Vercel Secret entries. The dispatch secret is saved in Supabase Vault. The private dispatcher is enabled and its one-minute schedule is installed. Beta gating remains enabled for the same two approved accounts.
+
+Verified live: unauthenticated worker requests return 401; authenticated empty-queue requests return 200; a Vault-authenticated database request reaches the worker with HTTP 200; service worker and manifest return 200; the signed-in settings page shows Off and enables the explicit opt-in button, with no browser console errors. There are zero registered devices and no actual provider alert has been sent. Real device delivery remains to be tested after the user enables a device.
+
+Network request queues are inaccessible to anonymous/authenticated clients so they cannot read dispatch authentication headers. See push_request_privacy.sql. Main Git history was preserved; the release was advanced with a fast-forward push and manually promoted using Production environment settings.
