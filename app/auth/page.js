@@ -30,8 +30,16 @@ function AuthForm() {
     try {
       const callback=new URL('/auth/callback',window.location.origin);
       callback.searchParams.set('next',redirectedFrom);
-      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:callback.toString()}});
-      if(error) throw error;
+      let timeout;
+      try {
+        const {data,error}=await Promise.race([
+          supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:callback.toString(),skipBrowserRedirect:true}}),
+          new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('Sign-in took too long. Reload this page and try again.')),12000);}),
+        ]);
+        if(error) throw error;
+        if(!data?.url) throw new Error('Google sign-in is unavailable. Please try again.');
+        window.location.assign(data.url);
+      } finally { clearTimeout(timeout); }
     } catch(error) {setErr(error.message || 'Google sign-in is unavailable.');setBusy(false);}
   }
   async function handleSubmit(e) {

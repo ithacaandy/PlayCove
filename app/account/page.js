@@ -181,8 +181,7 @@ export default function AccountPage() {
       if (!response.ok || !result.signedOut) throw new Error(result.error || 'Could not sign out. Please try again.');
       setSession(null);
       setProfile(null);
-      router.replace('/auth');
-      router.refresh();
+      window.location.replace('/auth');
     } catch (error) {
       setSignOutError(error.name === 'TimeoutError' || error.name === 'AbortError'
         ? 'Sign-out took too long. Reload this page to check your session before trying again.'
