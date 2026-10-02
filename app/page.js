@@ -2,7 +2,7 @@
 import { localDateIso } from '../lib/event-validation';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { useNotifications } from './components/NotificationProvider';
 import SectionFilters from './components/SectionFilters';
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '../lib/supabaseClient';
@@ -13,6 +13,7 @@ import Avatar from './components/Avatar';
 const supabase = getSupabaseClient();
 
 export default function HomePage() {
+  const { items: notifications } = useNotifications();
   const [sectionFilters, setSectionFilters] = useState({participation:'all'});
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState(null);
@@ -171,12 +172,12 @@ export default function HomePage() {
           <SectionFilters title="Home" sections={[{key:'participation',label:'Your plans',options:[['all','All'],['hosting','Hosting'],['going','Going']]}]} values={sectionFilters} onChange={setSectionFilters} light={false} />
         </div>
 
-        <div className="mb-5 flex flex-wrap gap-3"><Link href="/heading-out" className="rounded-xl bg-yellow-300 px-5 py-3 font-semibold">Heading out</Link><Link href="/connections" className="rounded-xl border bg-white px-4 py-3">Connections</Link></div>
+        <nav aria-label="Your hub" className="mb-6 grid grid-cols-2 gap-3">
+          <Link href="/notifications" className="rounded-2xl border bg-white p-4"><span className="flex items-center justify-between gap-2 font-semibold">Inbox{notifications.length > 0 && <span className="rounded-full bg-yellow-300 px-2 py-0.5 text-xs">{notifications.length}</span>}</span><span className="mt-1 block text-sm text-gray-600">Invitations and updates</span></Link>
+          <Link href="/connections" className="rounded-2xl border bg-white p-4"><span className="block font-semibold">Connections</span><span className="mt-1 block text-sm text-gray-600">Your circle and requests</span></Link>
+        </nav>
         {me && <OutingList />}
-        <section className="mb-5 overflow-hidden rounded-2xl border border-yellow-200 bg-white">
-          <Image src="/brand/linklemon-neighborhood-v1.png" alt="Isometric lemon-themed neighborhood park with families meeting and playing" width={1536} height={1024} className="h-40 w-full object-cover" priority />
-          <div className="px-4 py-3"><h2 className="font-semibold text-[var(--accent)]">A little connection goes a long way.</h2><p className="mt-1 text-sm text-gray-600">Find your people. Make a plan. Meet with LinkLemon.</p></div>
-        </section>
+        <h2 className="mb-3 font-semibold">Your upcoming events</h2>
         {err && (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {err}
@@ -194,7 +195,7 @@ export default function HomePage() {
           </div>
         ) : !hasAnything ? (
           <div className="mt-5 text-[var(--ink)]">
-            No events match this view. Create an event from <Link href="/new" className="underline">New</Link> or join a group in{' '}
+            No upcoming events match this view. <Link href="/new" className="underline">Create an event</Link> or find something to join in{' '}
             <Link href="/discover" className="underline">Discover</Link>.
           </div>
         ) : (

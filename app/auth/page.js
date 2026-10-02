@@ -2,6 +2,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { safeReturnPath } from '../../lib/auth-navigation';
 import { getSupabaseClient } from '../../lib/supabaseClient';
@@ -89,6 +90,7 @@ function AuthForm() {
           </span>
         </header>
 
+        <section className="mb-6 overflow-hidden rounded-xl border border-yellow-100"><Image src="/brand/linklemon-neighborhood-v1.png" alt="Isometric lemon-themed neighborhood park with families meeting and playing" width={1536} height={1024} className="h-32 w-full object-cover" priority /><div className="p-3"><h1 className="font-semibold">A little connection goes a long way.</h1><p className="mt-1 text-sm text-gray-600">Find your people. Make a plan. Meet with LinkLemon.</p></div></section>
         <button type="button" disabled={busy} onClick={signInWithGoogle} className="mb-5 flex w-full items-center justify-center rounded-xl border border-gray-300 px-4 py-3 font-medium hover:bg-gray-50 disabled:opacity-50">Continue with Google</button>
         <p className="mb-4 text-center text-xs text-gray-500">or continue with email</p>
         <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-black/10 bg-black/5 p-1">
