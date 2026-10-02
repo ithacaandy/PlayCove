@@ -7,6 +7,7 @@ import SectionFilters from './components/SectionFilters';
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '../lib/supabaseClient';
 import EventCard from './components/EventCard';
+import OutingList from './components/OutingList';
 import Avatar from './components/Avatar';
 
 const supabase = getSupabaseClient();
@@ -170,6 +171,8 @@ export default function HomePage() {
           <SectionFilters title="Home" sections={[{key:'participation',label:'Your plans',options:[['all','All'],['hosting','Hosting'],['going','Going']]}]} values={sectionFilters} onChange={setSectionFilters} light={false} />
         </div>
 
+        <div className="mb-5 flex flex-wrap gap-3"><Link href="/heading-out" className="rounded-xl bg-yellow-300 px-5 py-3 font-semibold">Heading out</Link><Link href="/connections" className="rounded-xl border bg-white px-4 py-3">Connections</Link></div>
+        {me && <OutingList />}
         <section className="mb-5 overflow-hidden rounded-2xl border border-yellow-200 bg-white">
           <Image src="/brand/linklemon-neighborhood-v1.png" alt="Isometric lemon-themed neighborhood park with families meeting and playing" width={1536} height={1024} className="h-40 w-full object-cover" priority />
           <div className="px-4 py-3"><h2 className="font-semibold text-[var(--accent)]">A little connection goes a long way.</h2><p className="mt-1 text-sm text-gray-600">Find your people. Make a plan. Meet with LinkLemon.</p></div>

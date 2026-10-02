@@ -18,6 +18,8 @@ export default function NotificationProvider({ children }) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Could not load notifications.');
         const items = [
+          ...(data.connectionRequests || []).map(i=>({id:'connection-'+i.id,type:'connection',title:i.name+' wants to connect',href:'/connections',createdAt:i.created_at || new Date(0).toISOString(),kind:'connection'})),
+          ...(data.socialNotices || []).map(i=>({id:'social-'+i.id,socialId:i.id,type:'outing',title:i.title,href:'/outings/'+i.outing_id,createdAt:i.created_at,kind:i.kind})),
           ...(data.invitations || []).map(i => ({ id: 'group-' + i.invite_id, type: 'group', title: 'Invitation to ' + i.group_name, href: '/invite?token=' + encodeURIComponent(i.token), createdAt: i.created_at, expiresAt: i.expires_at })),
           ...(data.eventInvitations || []).map(i => ({ id: 'event-' + i.invite_id, type: 'event', title: 'Invitation to ' + i.event_title, href: '/event-invite?token=' + encodeURIComponent(i.token), createdAt: i.created_at, expiresAt: i.expires_at })),
           ...(data.eventNotices || []).map(i => ({id:'notice-' + i.id, notificationId:i.id, type:'event', title:i.event_title + ' was cancelled', href:'/events/' + i.event_id, createdAt:i.created_at, kind:'cancelled'})),

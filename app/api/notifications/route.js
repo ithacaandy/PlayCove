@@ -12,6 +12,9 @@ export async function GET() {
     if (events.error && !['PGRST202', '42883'].includes(events.error.code)) return NextResponse.json({ error: 'Could not load event invitations.' }, { status: 503, headers });
     const notices = await s.from('event_notifications').select('id,event_id,event_title,kind,created_at').eq('user_id',user.id).is('read_at',null).order('created_at',{ascending:false});
     if(notices.error) throw notices.error;
-    return NextResponse.json({ eventNotices: notices.data || [], invitations: data || [], eventInvitations: events.data || [] }, { headers });
+    const social = await s.rpc('social_action', {action:'notices',payload:{}});
+    const connections = await s.rpc('social_action', {action:'connections',payload:{}});
+    if(social.error || connections.error) throw social.error || connections.error;
+    return NextResponse.json({ socialNotices: social.data || [], connectionRequests: (connections.data || []).filter(i=>i.status==='pending' && i.incoming), eventNotices: notices.data || [], invitations: data || [], eventInvitations: events.data || [] }, { headers });
   } catch { return NextResponse.json({ error: 'Could not load invitations.' }, { status: 503, headers }); }
 }
