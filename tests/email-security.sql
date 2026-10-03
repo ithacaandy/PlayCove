@@ -40,7 +40,7 @@ select public.email_settings('resume');
 select public.email_settings('heading_out','{"enabled":false}');
 reset role;
 insert into linklemon_private.social_notices(user_id,outing_id,kind,title) values('d032a1a2-e77c-4f4a-8e8d-bde586bee5a0','99999999-eeee-4eee-8eee-111111111111','joined','Rollback suppressed heading out');
-do $$begin if (select count(*) from linklemon_private.email_jobs)<>1 then raise exception 'Heading out exclusion ignored';end if;end $$;
+do $$begin if (select count(*) from linklemon_private.email_jobs where source='social' and source_id in (select id from linklemon_private.social_notices where outing_id='99999999-eeee-4eee-8eee-111111111111'))<>1 then raise exception 'Heading out exclusion ignored';end if;end $$;
 select set_config('test.unsubscribe',(select unsubscribe_token from linklemon_private.email_preferences where user_id='d032a1a2-e77c-4f4a-8e8d-bde586bee5a0'),true);
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);

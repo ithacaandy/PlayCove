@@ -333,7 +333,7 @@ export default function AccountPage() {
 
           <div className="flex items-center justify-between gap-4">
             <span className="text-[14px] text-black">Email notifications</span>
-            <span className="text-xs text-gray-600">Coming soon</span>
+            <Link href="/notification-settings" className="text-xs text-black underline underline-offset-2">Manage email</Link>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-[14px] text-black">Profile visibility settings</span>
