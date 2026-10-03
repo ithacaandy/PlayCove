@@ -5,7 +5,7 @@ import { readGroupAccess, canManageGroup } from '../../../../lib/group-membershi
 
 export async function POST(req) {
   try {
-    const s = createServerSupabase();
+    const s = await createServerSupabase();
     const { data: { user }, error: authError } = await s.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 });
     const fd = await req.formData();

@@ -6,6 +6,7 @@ import { useNotifications } from './components/NotificationProvider';
 import SectionFilters from './components/SectionFilters';
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '../lib/supabaseClient';
+import { homeFeedStore } from '../lib/home-feed';
 import EventCard from './components/EventCard';
 import OutingList from './components/OutingList';
 import Avatar from './components/Avatar';
@@ -24,126 +25,72 @@ export default function HomePage() {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    if (!supabase) {
-      setErr('Supabase not configured');
-      setLoading(false);
-      return;
-    }
-
-    (async () => {
-      setLoading(true);
-
-      const { data: sres } = await supabase.auth.getSession();
-      const user = sres?.session?.user || null;
+    let active = true;
+    let currentId;
+    let request = 0;
+    let authRevision = 0;
+    const applyFeed = feed => {
+      if (!active) return;
+      setMyProfile(feed?.profile || null);
+      setMyEvents(feed?.hosted || []);
+      setRsvps(feed?.going || []);
+      if (feed) setLoading(false);
+    };
+    const unsubscribe = homeFeedStore.subscribe(applyFeed);
+    async function refresh(session, force = false) {
+      if (!active) return;
+      const user = session?.user || null;
       const id = user?.id || null;
-      const email = user?.email || null;
-
-      setMe(id ? { id, email } : null);
-
+      if (!force && currentId === id) return;
+      currentId = id;
+      const version = ++request;
+      homeFeedStore.setAccount(id);
+      setMe(id ? { id, email: user.email } : null);
+      const cached = homeFeedStore.read(id, localDateIso());
+      applyFeed(cached);
+      setLoading(Boolean(id) && !cached);
+      setErr(null);
+      if (!id) return;
       try {
-        let myProfileData = null;
-
-        if (id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .eq('id', id)
-            .maybeSingle();
-
-          myProfileData = profile || null;
-        }
-
-        setMyProfile(myProfileData);
-
-        const [mine, rsvpList] = await Promise.all([
-          id
-            ? supabase
-                .from('events')
-                .select(
-                  'id, owner_id, cancelled_at, title, description, date_iso, start_time, end_time, city, location_name, created_at, image_url'
-                )
-                .eq('owner_id', id)
-                .gte('date_iso', localDateIso())
-                .order('date_iso', { ascending: true })
-            : { data: [], error: null },
-
-          id
-            ? supabase
-                .from('rsvps')
-                .select('event_id')
-                .eq('user_id', id)
-            : { data: [], error: null },
-
-        ]);
-
-        const myEvRaw = mine.data || [];
-
-        const rsvpEventIds = (rsvpList.data || [])
-          .map((r) => r.event_id)
-          .filter(Boolean);
-
-        let rsvpEventsRaw = [];
-
-        if (rsvpEventIds.length) {
-          const { data: evs } = await supabase
-            .from('events')
-            .select(
-              'id, owner_id, cancelled_at, title, description, date_iso, start_time, end_time, city, location_name, created_at, image_url'
-            )
-            .in('id', rsvpEventIds);
-
-          rsvpEventsRaw = (evs || []).filter((e) => e.owner_id !== id && e.date_iso >= localDateIso());
-        }
-
-        const allOwnerIds = Array.from(
-          new Set(
-            [...myEvRaw, ...rsvpEventsRaw]
-              .map((ev) => ev.owner_id)
-              .filter(Boolean)
-          )
-        );
-
-        let ownersById = {};
-
-        if (allOwnerIds.length) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .in('id', allOwnerIds);
-
-          (profiles || []).forEach((profile) => {
-            ownersById[profile.id] = profile;
-          });
-        }
-
-        const myEv = myEvRaw.map((ev) => ({
-          ...ev,
-          owner: ownersById[ev.owner_id] || {
-            full_name: '',
-            avatar_url: null,
-          },
-        }));
-
-        const rsvpEvents = rsvpEventsRaw.map((ev) => ({
-          ...ev,
-          owner: ownersById[ev.owner_id] || {
-            full_name: '',
-            avatar_url: null,
-          },
-        }));
-
-        setMyEvents(myEv);
-        setRsvps(rsvpEvents);
-
-        setErr(null);
-      } catch (e) {
-        setErr(e.message || String(e));
+        await homeFeedStore.refresh(supabase, id, localDateIso());
+      } catch {
+        if (active && version === request) setErr('Could not load your events. Please try again.');
       } finally {
-        setLoading(false);
+        if (active && version === request) setLoading(false);
       }
-    })();
+    }
+    // Keep auth callbacks synchronous; Supabase calls run after its auth lock releases.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const revision = ++authRevision;
+      if (event === 'SIGNED_OUT' || (currentId !== undefined && currentId !== (session?.user?.id || null))) {
+        currentId = undefined;
+        request++;
+        applyFeed(null);
+        setMe(null);
+        setLoading(true);
+      }
+      setTimeout(() => { if (active && revision === authRevision) refresh(session); }, 0);
+    });
+    const initialRevision = authRevision;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active || initialRevision !== authRevision) return;
+      if (error) throw error;
+      return refresh(data.session);
+    }).catch(() => {
+      if (active) { applyFeed(null); setErr('Could not check your session. Please reload to try again.'); setLoading(false); }
+    });
+    const onFocus = () => {
+      if (document.visibilityState === 'hidden') return;
+      const revision = authRevision;
+      supabase.auth.getSession().then(({ data, error }) => {
+        if (!active || revision !== authRevision) return;
+        if (error) throw error;
+        return refresh(data.session, true);
+      }).catch(() => { if (active) setErr('Could not refresh your session. Please reload to try again.'); });
+    };
+    window.addEventListener('focus', onFocus);
+    return () => { active = false; request++; unsubscribe(); subscription.unsubscribe(); window.removeEventListener('focus', onFocus); };
   }, []);
-
   const visibleHosted = sectionFilters.participation === 'going' ? [] : myEvents;
   const visibleGoing = sectionFilters.participation === 'hosting' ? [] : rsvps;
   const hasAnything = useMemo(() => {

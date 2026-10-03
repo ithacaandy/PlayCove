@@ -6,7 +6,7 @@ import { checkBetaAccess } from '../../lib/beta-access';
 export const dynamic = 'force-dynamic';
 
 export default async function BetaAccessPage() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   const access = user ? await checkBetaAccess(supabase, process.env.LINKLEMON_BETA_GATE_ENABLED === 'true') : null;
   if (access?.allowed) redirect('/');

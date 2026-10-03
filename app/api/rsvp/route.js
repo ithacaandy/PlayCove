@@ -4,7 +4,7 @@ import { setEventRsvp } from '../../../lib/event-rsvp';
 
 export async function POST(req) {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 });
     const params = new URL(req.url).searchParams;

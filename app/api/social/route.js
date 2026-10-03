@@ -3,7 +3,7 @@ import { createServerSupabase } from '../../../lib/supabase-server';
 const reads = new Set(['connections','audience','outings','outing','notices']);
 const writes = new Set(['request_connection','respond_connection','disconnect','create_outing','respond_outing','cancel_outing','read_notice']);
 async function run(action,payload) {
- const s=createServerSupabase(); const {data:{user},error:authError}=await s.auth.getUser();
+ const s=await createServerSupabase(); const {data:{user},error:authError}=await s.auth.getUser();
  const headers={'Cache-Control':'private, no-store'};
  if(authError || !user) return NextResponse.json({error:'Please sign in first.'},{status:401,headers});
  const {data,error}=await s.rpc('social_action',{action,payload});

@@ -1,8 +1,10 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {social,outingTime} from '../../../lib/social-client';
-export default function OutingPage({params}) {
+export default function OutingPage() {
+ const params = useParams();
  const [outing,setOuting]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[clock,setClock]=useState(Date.now());
  async function load(signal){const response=await fetch('/api/social?action=outing&id='+encodeURIComponent(params.id),{cache:'no-store',signal:signal || AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error || 'Could not load this outing.');setOuting(result.data[0] || null);}
  useEffect(()=>{const c=new AbortController();async function refresh(){try{await load(c.signal);setClock(Date.now());setError('');}catch(e){if(e.name!=='AbortError')setError(e.message);}finally{setLoading(false);}}refresh();const timer=setInterval(refresh,60000);return()=>{c.abort();clearInterval(timer);};},[params.id]);

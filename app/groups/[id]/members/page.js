@@ -3,8 +3,8 @@ import { createServerSupabase } from "../../../../lib/supabase-server";
 import { redirect } from "next/navigation";
 
 export default async function MembersPage({ params }){
-  const groupId = params.id;
-  const s = createServerSupabase();
+  const groupId = (await params).id;
+  const s = await createServerSupabase();
   const { data: { user } } = await s.auth.getUser();
   if(!user) redirect(`/auth?next=/groups/${groupId}/members`);
 

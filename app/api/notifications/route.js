@@ -3,7 +3,7 @@ import { createServerSupabase } from '../../../lib/supabase-server';
 export async function GET() {
   const headers = { 'Cache-Control': 'private, no-store' };
   try {
-    const s = createServerSupabase();
+    const s = await createServerSupabase();
     const { data: { user }, error: authError } = await s.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401, headers });
     const { data, error } = await s.rpc('my_pending_group_invites');

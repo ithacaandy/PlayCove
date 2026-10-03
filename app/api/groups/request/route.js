@@ -3,7 +3,7 @@ import { createServerSupabase } from '../../../../lib/supabase-server';
 import { requestGroupMembership } from '../../../../lib/group-membership';
 
 export async function POST(req) {
-  const s = createServerSupabase();
+  const s = await createServerSupabase();
   const { data: { user }, error } = await s.auth.getUser();
   if (error || !user) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 });
   const group = new URL(req.url).searchParams.get('group');

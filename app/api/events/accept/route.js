@@ -3,7 +3,7 @@ import { createServerSupabase } from '../../../../lib/supabase-server';
 export async function POST(req) {
   if (req.headers.get('origin')!==new URL(req.url).origin) return NextResponse.json({ error:'Invalid request origin.' },{status:403});
   try {
-    const s=createServerSupabase();
+    const s=await createServerSupabase();
     const { data:{user},error:authError }=await s.auth.getUser();
     if(authError || !user) return NextResponse.json({error:'Sign in with the invited email first.'},{status:401});
     const fd=await req.formData();

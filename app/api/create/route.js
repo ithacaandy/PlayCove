@@ -6,7 +6,7 @@ import { parseEventInput } from "../../../lib/event-validation";
 import { readGroupAccess, isActiveMembership } from "../../../lib/group-membership";
 
 export async function POST(req) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
