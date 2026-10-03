@@ -9,7 +9,6 @@ import { getSupabaseClient } from '../lib/supabaseClient';
 import EventCard from './components/EventCard';
 import OutingList from './components/OutingList';
 import Avatar from './components/Avatar';
-import LemonMark from './components/LemonMark';
 import BetaWelcome from './components/BetaWelcome';
 
 const supabase = getSupabaseClient();
@@ -168,7 +167,7 @@ export default function HomePage() {
               bgClassName="bg-[var(--paper)]"
             />
             </Link>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-[var(--ink)]"><LemonMark className="h-8 w-8"/>Home</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold text-[var(--ink)]">Home</h1>
           </div>
 
           <SectionFilters title="Home" sections={[{key:'participation',label:'Your plans',options:[['all','All'],['hosting','Hosting'],['going','Going']]}]} values={sectionFilters} onChange={setSectionFilters} light={false} />

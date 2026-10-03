@@ -340,7 +340,7 @@ export default function EventDetailsPage() {
           <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--paper)] p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-[var(--ink)]">
-                RSVPs{' '}
+                Who’s in?{' '}
                 <span className="text-gray-500 font-normal">
                   {iOwn ? `(${rsvps.length}${ev.capacity ? ` / ${ev.capacity}` : ''})` : ''}
                 </span>
