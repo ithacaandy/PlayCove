@@ -7,7 +7,7 @@ import NotificationProvider from './NotificationProvider';
 import NotificationSummary from './NotificationSummary';
 export default function NavFrame({ children }) {
   const path = usePathname();
-  if (path === '/beta-access') return <div className="min-h-screen">{children}</div>;
+  if (['/beta-access','/email-unsubscribe'].includes(path)) return <div className="min-h-screen">{children}</div>;
   const detailPage = /^\/events\/[^/]+$/.test(path || '');
   const hideNav = path?.startsWith('/auth');
   return <NotificationProvider><div className={hideNav ? "min-h-screen" : "min-h-screen app-frame"}>

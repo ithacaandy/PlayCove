@@ -22,7 +22,7 @@ const PUBLIC_PATHS = new Set([
 export async function middleware(req) {
   const { nextUrl, headers, cookies: reqCookies } = req;
   // Logout validates origin and manages its own cookies; do not refresh a session before clearing it.
-  if (nextUrl.pathname.startsWith('/brand/') || ['/api/push/dispatch','/sw.js','/manifest.webmanifest'].includes(nextUrl.pathname) || nextUrl.pathname === '/api/signout' || nextUrl.pathname === '/auth/callback' || nextUrl.pathname === '/api/auth/callback') return NextResponse.next();
+  if (nextUrl.pathname.startsWith('/brand/') || ['/email-unsubscribe','/api/email/unsubscribe','/api/push/dispatch','/sw.js','/manifest.webmanifest'].includes(nextUrl.pathname) || nextUrl.pathname === '/api/signout' || nextUrl.pathname === '/auth/callback' || nextUrl.pathname === '/api/auth/callback') return NextResponse.next();
 
   const res = NextResponse.next();
   const supabase = createServerClient(
