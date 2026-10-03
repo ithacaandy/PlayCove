@@ -1,4 +1,5 @@
 import { createServerSupabase } from "../../lib/supabase-server";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function Admin() {
@@ -18,6 +19,7 @@ export default async function Admin() {
     <main>
       <div className="mx-auto max-w-2xl px-4 py-6 space-y-4">
         <h2 className="text-lg font-semibold">Moderation</h2>
+        <Link href="/admin/beta" className="inline-block underline">Beta tester progress</Link>
         <div className="grid gap-3">
           {(flagged || []).map(e => (
             <div key={e.id} className={`card p-3 ${e.is_hidden ? "opacity-60" : ""}`}>

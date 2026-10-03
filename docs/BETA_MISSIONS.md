@@ -1,0 +1,17 @@
+# Beta missions and tester progress
+
+The first mission is “Let your group know you’re heading out.” It is assigned to approved beta accounts only after the five-step Welcome walkthrough is completed. Skipping Welcome does not unlock it. Welcome steps and completion are saved on the account across devices. Existing browser steps can be imported once; old local completion requires the final Get started confirmation.
+
+Mission progress records assignment, start, deferral, group outing evidence, completion and feedback. A new outing shared with a group qualifies only if at least one other group member receives it. Sharing only with direct connections does not qualify. A response from a recorded group recipient completes the mission, including “Can’t this time.” Assignment and completion are idempotent. Cancellation/expiry before a response prompts another outing. Creating a qualifying outing also records start if the tester bypasses the Start button.
+
+The Home card updates on focus, every minute while visible, and via Check mission progress. It provides an optional experience rating and comment. Testers are told that the beta team reviews setup, mission progress and feedback; there is no click-by-click activity tracking. Neither mission assignment nor reminders send email or push notifications. Outings retain their existing normal notification behavior.
+
+Existing admins can view `/admin/beta`, linked from `/admin`. The dashboard shows the approved roster, signup/setup state, mission status, group outing count, last setup/mission activity and mission feedback. It does not show arbitrary activity, outing contents, recipients, or children’s details. No new admin privileges are assigned by this feature.
+
+Database changes are recorded in `supabase/repairs/beta_missions.sql`, applied as `linklemon_beta_missions`. Four private tables have RLS enabled and no client table grants. Authenticated public RPC wrappers call guarded private functions with empty search paths. Actor identity comes from `auth.uid()`, never a request-supplied user ID. Dashboard authorization checks the existing admins table inside the database as well as the server page. Social evidence is recorded in the same transaction as the existing social operation; its original validation and notifications remain intact.
+
+Verification includes 68 Node tests, the optimized build with placeholder Supabase settings, notification-action checks and rollback-only SQL fixtures. SQL tests cover the Welcome/skip gate, stale-device updates, repeated completion, deferral, feedback, group decline completion, connection-only exclusion, cross-account isolation, direct table denial, admin-only access and anonymous/non-beta denial. Generated fixture accounts, groups, outings and notification jobs are rolled back; no fixture accounts remain.
+
+Supabase security advisors report informational missing-policy notices on the intentionally closed private tables ([explanation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)). Existing warnings about public definer helpers and disabled leaked-password protection remain outside this feature; the new exposed wrappers use invoker security and the SQL tests verify denied access.
+
+Historical activity before this feature is not backfilled or presented as completed missions. General Report a problem feedback remains separate from mission feedback. This initial release contains one fixed mission; custom mission authoring and targeted campaigns can be added later.
