@@ -57,14 +57,14 @@ grant execute on function public.email_settings(text,jsonb) to authenticated;
 
 create function linklemon_private.queue_notice_email() returns trigger language plpgsql security definer set search_path='' as $$
 declare target uuid; subject_line text; message_text text; link_path text; expiry timestamptz:=now()+interval '24 hours'; source_name text;
- host_name text; destination text; item_name text; invite_email text;
+ host_name text; destination text; item_name text; invite_email text; outing_start timestamptz; outing_end timestamptz; outing_message text;
 begin
  if tg_table_name='social_notices' then
   target:=new.user_id; source_name:='social';
-  select least(o.ends_at,expiry),o.place,coalesce(nullif(trim(p.full_name),''),'Someone in your circle') into expiry,destination,host_name
+  select least(o.ends_at,expiry),o.place,coalesce(nullif(trim(p.full_name),''),'Someone in your circle'),o.starts_at,o.ends_at,o.message into expiry,destination,host_name,outing_start,outing_end,outing_message
    from linklemon_private.outings o left join public.profiles p on p.id=o.owner_id where o.id=new.outing_id;
-  subject_line:=case new.kind when 'outing' then left(host_name,60)||' is heading out. Who’s in?' when 'joined' then 'Someone’s joining your outing' else 'An outing was cancelled' end;
-  message_text:=case new.kind when 'outing' then left(host_name,60)||' is heading out to '||left(destination,120)||'. Who’s in?' else new.title end;
+  subject_line:=case new.kind when 'outing' then left(host_name,60)||' is heading out to '||left(destination,120) when 'joined' then 'Someone’s joining your outing' else 'An outing was cancelled' end;
+  message_text:=case new.kind when 'outing' then to_char(outing_start at time zone 'America/New_York','Dy, Mon FMDD, YYYY • FMHH12:MI AM')||'–'||to_char(outing_end at time zone 'America/New_York',case when (outing_start at time zone 'America/New_York')::date=(outing_end at time zone 'America/New_York')::date then 'FMHH12:MI AM' else 'Dy, Mon FMDD, YYYY • FMHH12:MI AM' end)||' Eastern Time'||case when nullif(trim(outing_message),'') is not null then E'\n\n'||left(trim(outing_message),500) else '' end else new.title end;
   link_path:='/outings/'||new.outing_id;
  elsif tg_table_name='connections' then
   if new.status<>'pending' then return new; end if;

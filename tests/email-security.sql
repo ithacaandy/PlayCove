@@ -16,7 +16,7 @@ do $$declare job uuid;begin
  select id into job from linklemon_private.email_jobs where source_id='99999999-eeee-4eee-8eee-222222222222';
  if job is null or not linklemon_private.email_eligible(job) then raise exception 'Eligible outing not queued';end if;
  perform set_config('test.email_job',job::text,true);
- if not exists(select 1 from linklemon_private.email_jobs where id=job and body like '% is heading out to Email rollback test park. Who’s in?') then raise exception 'Outing wording failed';end if;
+ if not exists(select 1 from linklemon_private.email_jobs where id=job and subject like '% is heading out to Email rollback test park' and body like '%Eastern Time%') then raise exception 'Outing wording failed';end if;
 end $$;
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);

@@ -35,3 +35,8 @@ test('provider limits and temporary failures retry; permanent rejections do not'
 test('dispatch leaves unstarted work for another run when its time budget is exhausted',async()=>{
  const r=await scenario({deadline:1000000000001});assert.equal(r.sent.length,0);assert.deepEqual(r.outcomes,[]);
 });
+
+test('outing email shows timing and optional message without repeating the subject',()=>{
+ const m=emailMessage({...job,subject:'Andy is heading out to Stewart Park',body:'Fri, Oct 2, 2026 • 4:00 PM–6:00 PM Eastern Time\n\nWe’ll be near the swings!'});
+ assert.ok(m.text.includes('4:00 PM–6:00 PM Eastern Time'));assert.ok(m.html.includes('We’ll be near the swings!'));assert.ok(m.html.includes('white-space:pre-line'));assert.ok(m.text.includes('View outing:'));assert.equal(m.text.split('Andy is heading out').length-1,1);
+});
