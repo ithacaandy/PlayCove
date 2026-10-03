@@ -4,7 +4,7 @@ import { parseFeedback } from '../../../lib/feedback-validation';
 
 export async function POST(req) {
   if (req.headers.get('origin') !== new URL(req.url).origin) return NextResponse.json({ error: 'Invalid request.' }, { status: 403 });
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 });
   let input;

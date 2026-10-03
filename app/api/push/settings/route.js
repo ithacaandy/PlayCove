@@ -3,7 +3,7 @@ import {NextResponse} from 'next/server';
 import {createServerSupabase} from '../../../../lib/supabase-server';
 const headers={'Cache-Control':'private, no-store'};
 export async function GET(){
- try {const s=createServerSupabase();const {data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
+ try {const s=await createServerSupabase();const {data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
  const {data,error}=await s.from('notification_preferences').select('enabled,paused_until').eq('user_id',user.id).maybeSingle();if(error)throw error;
  const availability=await s.rpc('push_available');if(availability.error)throw availability.error;
  return NextResponse.json({userId:user.id,betaWelcome:process.env.LINKLEMON_BETA_GATE_ENABLED==='true',settings:data || {enabled:false,paused_until:null},deliveryReady:pushReady() && availability.data===true},{headers});
@@ -11,7 +11,7 @@ export async function GET(){
 }
 export async function POST(req){
  if(req.headers.get('origin')!==new URL(req.url).origin)return NextResponse.json({error:'Invalid request.'},{status:403,headers});
- try {const s=createServerSupabase();const {data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
+ try {const s=await createServerSupabase();const {data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
  const raw=await req.text();if(raw.length>1000)return NextResponse.json({error:'Invalid request.'},{status:400,headers});
  const input=JSON.parse(raw);let update={updated_at:new Date().toISOString()};
  if(input.action==='off'){update.enabled=false;update.paused_until=null;}

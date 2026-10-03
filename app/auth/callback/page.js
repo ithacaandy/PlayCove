@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { safeReturnPath } from '../../../lib/auth-navigation';
-export default function Callback({searchParams}) {
+export default async function Callback({searchParams}) {
+ searchParams = await searchParams;
  const params=new URLSearchParams();
  for(const key of ['code','error']) if(typeof searchParams[key]==='string') params.set(key,searchParams[key]);
  params.set('next',safeReturnPath(searchParams.next));

@@ -3,7 +3,7 @@ import {createServerSupabase} from '../../../../lib/supabase-server';
 import {emailReady} from '../../../../lib/email-delivery';
 const headers={'Cache-Control':'private, no-store'};
 async function settings(action,payload={}){
- const s=createServerSupabase();const {data:{user}}=await s.auth.getUser();
+ const s=await createServerSupabase();const {data:{user}}=await s.auth.getUser();
  if(!user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
  const {data,error}=await s.rpc('email_settings',{action,payload});
  if(error)return NextResponse.json({error:'Email settings are not available yet.'},{status:503,headers});

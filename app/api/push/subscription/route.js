@@ -7,7 +7,7 @@ export async function POST(req){
  const headers={'Cache-Control':'private, no-store'};
  if(req.headers.get('origin')!==new URL(req.url).origin)return NextResponse.json({error:'Invalid request.'},{status:403,headers});
  try{
-  const s=createServerSupabase();const {data:{user},error:authError}=await s.auth.getUser();if(authError || !user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
+  const s=await createServerSupabase();const {data:{user},error:authError}=await s.auth.getUser();if(authError || !user)return NextResponse.json({error:'Please sign in.'},{status:401,headers});
   const availability=await s.rpc('push_available');
   if(!pushReady() || availability.error || availability.data!==true)return NextResponse.json({error:'Push alerts are not available yet.'},{status:503,headers});
   const text=await req.text();if(text.length>4000)throw new Error();

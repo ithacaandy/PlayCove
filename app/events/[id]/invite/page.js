@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-export default function InvitePage({ params }) {
+import { useParams } from 'next/navigation';
+export default function InvitePage() {
+  const params = useParams();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
