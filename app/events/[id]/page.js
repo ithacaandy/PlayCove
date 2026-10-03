@@ -287,7 +287,7 @@ export default function EventDetailsPage() {
                 )}
 
                 {iOwn && !ev.cancelled_at && ev.date_iso >= localDateIso() && <span className="flex flex-wrap items-center gap-2">
-                  <button type="button" disabled={busy} aria-describedby={confirmCancel ? 'cancel-event-note' : undefined} onClick={() => confirmCancel ? cancelEvent() : setConfirmCancel(true)} className={confirmCancel ? "btn bg-red-700 text-white hover:bg-red-800 disabled:opacity-50" : "btn btn-ghost text-red-700"}>{confirmCancel ? (busy ? 'Cancelling…' : 'Confirm cancellation') : 'Cancel event'}</button>
+                  <button type="button" disabled={busy} aria-describedby={confirmCancel ? 'cancel-event-note' : undefined} onClick={() => confirmCancel ? cancelEvent() : setConfirmCancel(true)} className={confirmCancel ? "btn bg-red-700 text-white hover:bg-red-800 disabled:opacity-50" : "btn btn-ghost text-red-700"}>{confirmCancel ? (busy ? 'Cancelling…' : 'Confirm') : 'Cancel event'}</button>
                   {confirmCancel && <button type="button" disabled={busy} onClick={() => setConfirmCancel(false)} className="btn btn-ghost">Keep event</button>}
                 </span>}
                 {confirmCancel && <p id="cancel-event-note" role="status" className="w-full text-sm text-red-700">Confirm to cancel this date and notify attendees. Choose Keep event to leave it scheduled.</p>}
