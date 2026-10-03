@@ -14,7 +14,7 @@ No old notifications are imported. Jobs are checked again before sending. Handle
 - Sender: `LinkLemon <notifications@notify.getlinklemon.com>`.
 - Resend key: sending-only, scoped to that domain; saved as a Production Secret `RESEND_API_KEY` in Vercel. Never commit it or make it `NEXT_PUBLIC_`.
 - Delivery remains off unless `LINKLEMON_EMAIL_DELIVERY_ENABLED=true` in production.
-- Apply `supabase/repairs/email_delivery.sql` as additive migration `email_delivery`, then run security advisors and the rollback-only database tests.
+- Apply `supabase/repairs/email_delivery.sql` as additive migration `email_delivery`, followed by `supabase/repairs/email_dispatch_scheduler.sql` as `email_dispatch_scheduler`, then run security advisors and the rollback-only database tests.
 - Deploy the reviewed commit after Andy's approval. The existing signed minute-by-minute push dispatcher also processes email; no separate scheduler secret is required.
 - Enable the production delivery flag before the approved production rebuild. No existing account is opted in automatically.
 
