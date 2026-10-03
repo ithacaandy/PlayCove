@@ -286,7 +286,11 @@ export default function EventDetailsPage() {
                   </Link>
                 )}
 
-                {iOwn && !ev.cancelled_at && ev.date_iso >= localDateIso() && <button type="button" disabled={busy} onClick={() => setConfirmCancel(true)} className="btn btn-ghost text-red-700">Cancel event</button>}
+                {iOwn && !ev.cancelled_at && ev.date_iso >= localDateIso() && <span className="flex flex-wrap items-center gap-2">
+                  <button type="button" disabled={busy} aria-describedby={confirmCancel ? 'cancel-event-note' : undefined} onClick={() => confirmCancel ? cancelEvent() : setConfirmCancel(true)} className={confirmCancel ? "btn bg-red-700 text-white hover:bg-red-800 disabled:opacity-50" : "btn btn-ghost text-red-700"}>{confirmCancel ? (busy ? 'Cancelling…' : 'Confirm cancellation') : 'Cancel event'}</button>
+                  {confirmCancel && <button type="button" disabled={busy} onClick={() => setConfirmCancel(false)} className="btn btn-ghost">Keep event</button>}
+                </span>}
+                {confirmCancel && <p id="cancel-event-note" role="status" className="w-full text-sm text-red-700">Confirm to cancel this date and notify attendees. Choose Keep event to leave it scheduled.</p>}
                 {!iOwn && !ev.cancelled_at && me && ev.date_iso >= localDateIso() && (
                   iRsvpd ? (
                     <button
@@ -310,10 +314,6 @@ export default function EventDetailsPage() {
             </div>
           </div>
 
-          {confirmCancel && <section role="alertdialog" aria-labelledby="cancel-event-title" className="mt-4 rounded-xl border border-red-200 bg-white p-4">
-            <h2 id="cancel-event-title" className="font-semibold">Cancel this event?</h2><p className="mt-2 text-sm">This cancels only this date. Everyone who RSVP’d will receive an in-app notification. New RSVPs will be blocked. To repost later, clone the event.</p>
-            <div className="mt-3 flex flex-wrap gap-2"><button disabled={busy} onClick={cancelEvent} className="rounded-lg bg-red-700 px-4 py-2 text-white">{busy ? 'Cancelling…' : 'Yes, cancel event'}</button><button disabled={busy} onClick={() => setConfirmCancel(false)} className="rounded-lg border px-4 py-2">Keep event</button></div>
-          </section>}
           {flash ? (
             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
               {flash}
