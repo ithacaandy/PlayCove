@@ -27,34 +27,32 @@ export default function Avatar({
 
   return (
     <div
-      style={{borderRadius:'45% 55% 45% 55% / 55% 45% 55% 45%'}}
       className={[
-        'relative flex shrink-0 items-center justify-center border-2 border-yellow-400 bg-[var(--sunshine)] text-black',
+        'relative flex shrink-0 items-center justify-center text-black',
         sizeMap[size] || sizeMap.md,
         borderClassName,
         className,
       ].join(' ')}
     >
-      <span aria-hidden="true" className="pointer-events-none absolute -top-1 right-0 z-10 h-[22%] w-[30%] rounded-[0_80%_0_80%] bg-green-600" />
-      <div className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{borderRadius:'inherit'}}>
+      <Image src="/brand/lemon-logo.png" alt="" aria-hidden="true" fill sizes="88px" className="pointer-events-none object-contain" />
+      <div className="absolute left-[47%] top-[61%] flex h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full">
       {showImage ? (
         <Image
           src={src}
           alt={name || 'Avatar'}
           fill
           sizes="80px"
-          className="object-cover"
+          className="rounded-full border border-white/80 object-cover"
           onError={() => setFailedSrc(src)}
         />
       ) : (
         <div
           className={[
-            'flex h-full w-full items-center justify-center bg-[var(--sunshine)] font-bold tracking-[-0.02em] text-black',
-            bgClassName,
+            'flex h-full w-full items-center justify-center font-bold tracking-[-0.02em] text-black',
             textClassName,
           ].join(' ')}
         >
-          <span className="leading-none">{initials}</span>
+          <span className="text-[0.8em] leading-none">{initials}</span>
         </div>
       )}
       </div>
